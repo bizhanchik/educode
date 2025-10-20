@@ -1,0 +1,61 @@
+# EduCode Backend Dependencies
+# Core FastAPI and web framework dependencies
+fastapi
+uvicorn[standard]
+pydantic
+pydantic-settings
+
+# Database dependencies
+sqlalchemy
+asyncpg
+psycopg2-binary
+alembic
+
+# Redis and Celery for task queue
+redis
+celery
+
+httpx
+aiohttp
+
+openai
+anthropic
+sentence-transformers
+scikit-learn
+numpy
+
+# File storage (MinIO/S3)
+minio
+boto3
+
+# Authentication and security
+python-jose[cryptography]
+passlib[bcrypt]
+python-multipart
+slowapi
+
+# Utilities and helpers
+python-dotenv
+email-validator
+python-dateutil
+
+# Development and testing dependencies
+pytest
+pytest-asyncio
+pytest-cov
+faker
+
+# Code quality and formatting
+black
+isort==5.12.0
+flake8==6.1.0
+mypy==1.7.1
+
+# Monitoring and logging
+structlog==23.2.0
+prometheus-client==0.19.0
+
+# Additional utilities
+click==8.1.7
+rich==13.7.0
+typer==0.9.0
