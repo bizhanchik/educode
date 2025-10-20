@@ -64,9 +64,6 @@ EduCode is not about catching plagiarism — it’s about **inspiring originalit
 
 ---
 
-## 🧩 Built With Love For
-
-Hackathons · IT Colleges · Teachers · Students · AI Enthusiasts ❤️  
 
 ---
 
@@ -132,5 +129,4 @@ EduCode — не про контроль, а про развитие 💫
 
 ---
 
-## 🧩 Проект создан с любовью для
 
