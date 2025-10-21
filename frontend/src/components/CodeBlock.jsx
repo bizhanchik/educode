@@ -126,23 +126,23 @@ startEduCode();`
 
   return (
     <motion.div
-      className="bg-[#0d1117] rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.25)] overflow-hidden border border-gray-700 w-[500px]"
+      className="bg-[#0d1117] rounded-xl sm:rounded-2xl shadow-[0_10px_40px_rgba(0,0,0,0.25)] overflow-hidden border border-gray-700 w-full max-w-sm sm:max-w-md md:max-w-lg lg:max-w-xl"
       initial={{ opacity: 0, y: 20 }}
       animate={{ opacity: 1, y: 0 }}
       transition={{ duration: 0.6, delay: 0.4 }}
     >
       {/* Заголовок окна как в Mac */}
-      <div className="bg-gray-800 px-6 py-4 border-b border-gray-700 flex items-center">
-        <div className="flex space-x-2">
-          <div className="w-3 h-3 rounded-full bg-red-500"></div>
-          <div className="w-3 h-3 rounded-full bg-yellow-500"></div>
-          <div className="w-3 h-3 rounded-full bg-green-500"></div>
+      <div className="bg-gray-800 px-3 sm:px-6 py-3 sm:py-4 border-b border-gray-700 flex items-center">
+        <div className="flex space-x-1 sm:space-x-2">
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-red-500"></div>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-yellow-500"></div>
+          <div className="w-2 h-2 sm:w-3 sm:h-3 rounded-full bg-green-500"></div>
         </div>
-        <div className="ml-4 text-sm text-gray-400 font-medium">eduCode.js</div>
+        <div className="ml-3 sm:ml-4 text-xs sm:text-sm text-gray-400 font-medium">eduCode.js</div>
       </div>
       
       {/* Код с подсветкой синтаксиса */}
-      <div className="bg-[#0d1117] text-gray-100 font-mono p-8 px-10 leading-relaxed whitespace-pre-wrap break-words text-sm md:text-base">
+      <div className="bg-[#0d1117] text-gray-100 font-mono p-4 sm:p-6 md:p-8 px-4 sm:px-6 md:px-10 leading-relaxed whitespace-pre-wrap break-words text-xs sm:text-sm md:text-base">
         <code>
           {createHighlightedCode(displayedCode)}
         </code>

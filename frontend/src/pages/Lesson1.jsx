@@ -7,6 +7,7 @@ const Lesson1 = ({ onPageChange }) => {
   const { t } = useLanguage();
   const [currentSection, setCurrentSection] = useState('video'); // 'video', 'theory', or 'practice'
   const [showPracticeModal, setShowPracticeModal] = useState(false);
+  const [code, setCode] = useState('# Напишите здесь вашу программу\nprint("Hello, World!")');
 
   const lessonData = {
     id: 1,
@@ -111,7 +112,7 @@ console.log("Добро пожаловать в мир программиров�
   return (
     <div className="bg-gray-50 min-h-screen">
       {/* Header Section */}
-      <section className="bg-white border-b border-gray-200 pt-20">
+      <section className="bg-white border-b border-gray-200 pt-16 sm:pt-20 md:pt-24">
         <div className="max-w-6xl mx-auto px-6 py-6">
           {/* Back Button */}
           <motion.div

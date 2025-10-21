@@ -217,7 +217,7 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal }) => {
           {/* Modal container with glassmorphism */}
           <motion.div
             ref={modalRef}
-            className="relative bg-white/90 backdrop-blur-md rounded-xl shadow-2xl border border-white/30 p-8 w-full max-w-md"
+            className="relative bg-white/90 backdrop-blur-md rounded-xl shadow-2xl border border-white/30 p-4 sm:p-6 md:p-8 w-full max-w-sm sm:max-w-md mx-4"
             initial={{ opacity: 0, scale: 0.9, y: 20 }}
             animate={{ opacity: 1, scale: 1, y: 0 }}
             exit={{ opacity: 0, scale: 0.95, y: 10 }}
@@ -234,7 +234,7 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal }) => {
             
                 {/* Title with typewriter effect */}
             <motion.h2 
-              className="text-3xl font-bold text-gray-900 mb-8"
+              className="text-2xl sm:text-3xl font-bold text-gray-900 mb-6 sm:mb-8"
               initial={{ opacity: 0, y: -10 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ delay: 0.1 }}

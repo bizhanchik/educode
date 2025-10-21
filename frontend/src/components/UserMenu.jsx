@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { 
   User, 
@@ -27,6 +27,34 @@ const UserMenu = ({ onPageChange }) => {
   
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const menuRef = useRef(null);
+
+  // Закрытие меню при клике вне компонента и нажатии Escape
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (menuRef.current && !menuRef.current.contains(event.target)) {
+        setIsOpen(false);
+      }
+    };
+
+    const handleEscape = (event) => {
+      if (event.key === 'Escape') {
+        setIsOpen(false);
+      }
+    };
+
+    if (isOpen) {
+      document.addEventListener('mousedown', handleClickOutside);
+      document.addEventListener('click', handleClickOutside);
+      document.addEventListener('keydown', handleEscape);
+    }
+
+    return () => {
+      document.removeEventListener('mousedown', handleClickOutside);
+      document.removeEventListener('click', handleClickOutside);
+      document.removeEventListener('keydown', handleEscape);
+    };
+  }, [isOpen]);
 
   if (!user || !logout) return null;
 
@@ -43,7 +71,7 @@ const UserMenu = ({ onPageChange }) => {
   };
 
   return (
-    <div className="relative">
+    <div className="relative" ref={menuRef}>
       {/* Кнопка пользователя */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}

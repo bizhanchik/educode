@@ -7,7 +7,6 @@ import { useAuth } from '../hooks/useAuth.jsx';
 
 const Navbar = ({ onOpenModal, onPageChange }) => {
   const [scrolled, setScrolled] = useState(false);
-  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const { t } = useLanguage();
   
   // Безопасное получение useAuth
@@ -31,6 +30,7 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
     window.addEventListener('scroll', handleScroll);
     return () => window.removeEventListener('scroll', handleScroll);
   }, [scrolled]);
+
 
   return (
     <motion.nav 
@@ -84,7 +84,7 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
                    ) : (
               <>
                 <motion.button 
-                  className="px-4 py-2 rounded-xl border border-gray-300 bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300"
+                  className="px-3 sm:px-4 py-2 rounded-xl border border-gray-300 bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300 text-sm sm:text-base"
                   onClick={() => onOpenModal('login')}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
@@ -92,86 +92,21 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
                   {t('navbar.signin')}
                 </motion.button>
                 <motion.button
-                  className="px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300"
+                  className="px-3 sm:px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base"
                   onClick={() => onOpenModal('signup')}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  {t('navbar.signup')}
+                  <span className="hidden sm:inline">{t('navbar.signup')}</span>
+                  <span className="sm:hidden">{t('navbar.signupMobile')}</span>
                 </motion.button>
               </>
             )}
           </div>
           
-          {/* Mobile menu button */}
-          <div className="md:hidden">
-            <motion.button
-              onClick={() => setMobileMenuOpen(!mobileMenuOpen)}
-              className="text-dark-text p-2 rounded-lg bg-white/10 backdrop-blur-sm"
-              whileTap={{ scale: 0.95 }}
-            >
-              {mobileMenuOpen ? (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="18" y1="6" x2="6" y2="18"></line>
-                  <line x1="6" y1="6" x2="18" y2="18"></line>
-                </svg>
-              ) : (
-                <svg xmlns="http://www.w3.org/2000/svg" width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-                  <line x1="3" y1="12" x2="21" y2="12"></line>
-                  <line x1="3" y1="6" x2="21" y2="6"></line>
-                  <line x1="3" y1="18" x2="21" y2="18"></line>
-                </svg>
-              )}
-            </motion.button>
-          </div>
         </div>
       </div>
       
-      {/* Mobile menu */}
-      <AnimatePresence>
-        {mobileMenuOpen && (
-          <motion.div
-            initial={{ opacity: 0, height: 0 }}
-            animate={{ opacity: 1, height: 'auto' }}
-            exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.3, ease: "easeInOut" }}
-            className="md:hidden bg-glass-white backdrop-blur-lg border-t border-light-border"
-          >
-            <div className="px-4 py-5 space-y-3">
-              <MobileNavLink href="#about">{t('navbar.about')}</MobileNavLink>
-              <MobileNavLink href="#contacts">{t('navbar.contacts')}</MobileNavLink>
-              
-              <div className="pt-4 flex flex-col gap-3">
-                <motion.button
-                  className="w-full px-4 py-2 rounded-lg border border-gray-300 bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300"
-                  onClick={() => {
-                    setMobileMenuOpen(false);
-                    onOpenModal('login');
-                  }}
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  {t('navbar.signin')}
-                </motion.button>
-                    <motion.button
-                      className="w-full px-4 py-2 rounded-lg bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300"
-                      onClick={() => {
-                        setMobileMenuOpen(false);
-                        onOpenModal('signup');
-                      }}
-                      whileHover={{ scale: 1.02 }}
-                      whileTap={{ scale: 0.98 }}
-                    >
-                      {t('navbar.signup')}
-                    </motion.button>
-                <div className="pt-2">
-                  <LanguageSwitcher />
-                </div>
-              </div>
-            </div>
-           </motion.div>
-         )}
-       </AnimatePresence>
     </motion.nav>
   );
 };

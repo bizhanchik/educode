@@ -3,6 +3,8 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import MyCourses from './pages/MyCourses';
 import ProgrammingBasics from './pages/ProgrammingBasics';
+import DatabaseBasics from './pages/DatabaseBasics';
+import ICTBasics from './pages/ICTBasics';
 import Lesson1 from './pages/Lesson1';
 import AuthModal from './components/AuthModal';
 import AnimatedBackground from './components/AnimatedBackground';
@@ -48,10 +50,14 @@ function App() {
         return <MyCourses onPageChange={handlePageChange} />;
       case 'programming-basics':
         return <ProgrammingBasics onPageChange={handlePageChange} />;
+      case 'database-basics':
+        return <DatabaseBasics onPageChange={handlePageChange} />;
+      case 'ict-basics':
+        return <ICTBasics onPageChange={handlePageChange} />;
       case 'lesson-1':
         return <Lesson1 onPageChange={handlePageChange} />;
       default:
-        return <Home />;
+        return <Home onOpenModal={handleOpenModal} onPageChange={handlePageChange} />;
     }
   };
 

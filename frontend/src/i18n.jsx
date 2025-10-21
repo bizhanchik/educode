@@ -8,7 +8,8 @@ const ru = {
     "blog": "Блог",
     "contacts": "Контакты",
     "signin": "Войти",
-    "signup": "Зарегистрироваться",
+    "signup": "Регистрация",
+    "signupMobile": "Регистр.",
     "language": "Язык"
   },
   "hero": {
@@ -78,6 +79,7 @@ const kk = {
     "contacts": "Байланыс",
     "signin": "Кіру",
     "signup": "Тіркелу",
+    "signupMobile": "Тірк.",
     "language": "Тіл"
   },
   "hero": {
