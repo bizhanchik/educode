@@ -3,9 +3,15 @@ import Navbar from './components/Navbar';
 import Home from './pages/Home';
 import MyCourses from './pages/MyCourses';
 import ProgrammingBasics from './pages/ProgrammingBasics';
-import DatabaseBasics from './pages/DatabaseBasics';
-import ICTBasics from './pages/ICTBasics';
 import Lesson1 from './pages/Lesson1';
+import Lesson2 from './pages/Lesson2';
+import DatabaseLesson1 from './pages/DatabaseLesson1';
+import ICTLesson1 from './pages/ICTLesson1';
+import Notifications from './pages/Notifications';
+import Journal from './pages/Journal';
+import JournalDetail from './pages/JournalDetail';
+import TeacherDashboard from './pages/TeacherDashboard';
+import AdminDashboard from './pages/AdminDashboard';
 import AuthModal from './components/AuthModal';
 import AnimatedBackground from './components/AnimatedBackground';
 import { LanguageProvider } from './i18n.jsx';
@@ -50,12 +56,24 @@ function App() {
         return <MyCourses onPageChange={handlePageChange} />;
       case 'programming-basics':
         return <ProgrammingBasics onPageChange={handlePageChange} />;
-      case 'database-basics':
-        return <DatabaseBasics onPageChange={handlePageChange} />;
-      case 'ict-basics':
-        return <ICTBasics onPageChange={handlePageChange} />;
       case 'lesson-1':
         return <Lesson1 onPageChange={handlePageChange} />;
+      case 'lesson-2':
+        return <Lesson2 onPageChange={handlePageChange} />;
+      case 'database-lesson-1':
+        return <DatabaseLesson1 onPageChange={handlePageChange} />;
+      case 'ict-lesson-1':
+        return <ICTLesson1 onPageChange={handlePageChange} />;
+      case 'notifications':
+        return <Notifications onPageChange={handlePageChange} />;
+      case 'journal':
+        return <Journal onPageChange={handlePageChange} />;
+      case 'journal-detail':
+        return <JournalDetail onPageChange={handlePageChange} courseId={1} />;
+      case 'teacher-dashboard':
+        return <TeacherDashboard onPageChange={handlePageChange} />;
+      case 'admin-dashboard':
+        return <AdminDashboard onPageChange={handlePageChange} />;
       default:
         return <Home onOpenModal={handleOpenModal} onPageChange={handlePageChange} />;
     }
@@ -73,6 +91,7 @@ function App() {
             type={modalState.type}
             onClose={handleCloseModal}
             onSwitchModal={handleSwitchModal}
+            onPageChange={handlePageChange}
           />
         </div>
       </AuthProvider>

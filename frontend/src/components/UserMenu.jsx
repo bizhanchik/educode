@@ -7,10 +7,12 @@ import {
   ChevronDown, 
   BookOpen, 
   PlayCircle,
-  Calendar
+  Calendar,
+  Bell
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import { useLanguage } from '../i18n.jsx';
+import { getUserNotifications, getUnreadNotificationsCount, markNotificationAsRead } from '../utils/auth.js';
 
 const UserMenu = ({ onPageChange }) => {
   // Безопасное получение useAuth
@@ -27,7 +29,19 @@ const UserMenu = ({ onPageChange }) => {
   
   const { t } = useLanguage();
   const [isOpen, setIsOpen] = useState(false);
+  const [notifications, setNotifications] = useState([]);
+  const [unreadCount, setUnreadCount] = useState(2);
   const menuRef = useRef(null);
+
+  // Загружаем уведомления при изменении пользователя
+  useEffect(() => {
+    if (user) {
+      const userNotifications = getUserNotifications(user.id);
+      const count = getUnreadNotificationsCount(user.id);
+      setNotifications(userNotifications);
+      setUnreadCount(count);
+    }
+  }, [user]);
 
   // Закрытие меню при клике вне компонента и нажатии Escape
   useEffect(() => {
@@ -59,7 +73,12 @@ const UserMenu = ({ onPageChange }) => {
   if (!user || !logout) return null;
 
   const handleLogout = () => {
-    logout();
+    console.log('Logout clicked');
+    if (logout) {
+      logout();
+    } else {
+      console.error('Logout function not available');
+    }
     setIsOpen(false);
   };
 
@@ -70,12 +89,26 @@ const UserMenu = ({ onPageChange }) => {
     setIsOpen(false);
   };
 
+  const handleNotifications = () => {
+    setIsOpen(false);
+    if (onPageChange) {
+      onPageChange('notifications');
+    }
+  };
+
+  const handleJournal = () => {
+    if (onPageChange) {
+      onPageChange('journal');
+    }
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative" ref={menuRef}>
       {/* Кнопка пользователя */}
       <motion.button
         onClick={() => setIsOpen(!isOpen)}
-        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300"
+        className="flex items-center gap-2 px-3 py-2 rounded-lg bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300 relative"
         whileHover={{ scale: 1.03 }}
         whileTap={{ scale: 0.98 }}
       >
@@ -84,6 +117,13 @@ const UserMenu = ({ onPageChange }) => {
           {user.fullName || user.email}
         </span>
         <ChevronDown className={`w-4 h-4 transition-transform ${isOpen ? 'rotate-180' : ''}`} />
+        
+        {/* Счетчик уведомлений */}
+        {unreadCount > 0 && (
+          <div className="absolute -top-1 -right-1 bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+            {unreadCount}
+          </div>
+        )}
       </motion.button>
 
       {/* Выпадающее меню */}
@@ -134,14 +174,21 @@ const UserMenu = ({ onPageChange }) => {
                 </motion.button>
                 
                 <motion.button
+                  onClick={handleNotifications}
                   className="w-full px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all duration-200 flex items-center gap-3"
                   whileHover={{ x: 4 }}
                 >
-                  <PlayCircle className="w-5 h-5" />
-                  {t('userMenu.lessons')}
+                  <Bell className="w-5 h-5" />
+                  {t('userMenu.notifications')}
+                  {unreadCount > 0 && (
+                    <div className="ml-auto bg-red-500 text-white text-xs rounded-full w-5 h-5 flex items-center justify-center font-bold">
+                      {unreadCount}
+                    </div>
+                  )}
                 </motion.button>
 
                 <motion.button
+                  onClick={handleJournal}
                   className="w-full px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all duration-200 flex items-center gap-3"
                   whileHover={{ x: 4 }}
                 >

@@ -8,7 +8,7 @@ import Toast from '../components/Toast.jsx';
 import CodeRunner from '../components/CodeRunner.jsx';
 import BackButton from '../components/BackButton.jsx';
 
-const Lesson1 = ({ onPageChange }) => {
+const ICTLesson1 = ({ onPageChange }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [currentSection, setCurrentSection] = useState('video'); // 'video', 'theory', or 'practice'
@@ -21,48 +21,52 @@ const Lesson1 = ({ onPageChange }) => {
   const [tasks, setTasks] = useState([
     {
       id: 'task-1',
-      title: 'Вывод чисел от 1 до 5',
-      description: 'Напишите алгоритм, который выводит числа от 1 до 5',
+      title: 'Основы ИКТ',
+      description: 'Определите, что относится к программному обеспечению',
       userAnswer: '',
       status: 'pending',
       maxPoints: 30,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Напишите алгоритм, который выводит числа от 1 до 5
-for i in range(1, 6):
-    print(i)`
+      initialCode: `# Основы ИКТ
+print("Программное обеспечение:")
+print("- Windows (операционная система)")
+print("- Microsoft Word (текстовый редактор)")
+print("- Браузеры (Chrome, Firefox)")
+print("- Антивирусы (Kaspersky, Norton)")`
     },
     {
       id: 'task-2', 
-      title: 'Проверка четности числа',
-      description: 'Напишите программу, которая проверяет, является ли число четным',
+      title: 'Расширения файлов',
+      description: 'Укажите верные расширения для разных типов файлов',
       userAnswer: '',
       status: 'pending',
       maxPoints: 30,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Проверка четности числа
-number = int(input("Введите число: "))
-if number % 2 == 0:
-    print("Число четное")
-else:
-    print("Число нечетное")`
+      initialCode: `# Расширения файлов
+print("Текстовые документы: .txt, .doc, .docx")
+print("Изображения: .jpg, .png, .gif")
+print("Видео: .mp4, .avi, .mov")
+print("Аудио: .mp3, .wav, .flac")
+print("Архивы: .zip, .rar, .7z")`
     },
     {
       id: 'task-3',
-      title: 'Сумма элементов списка', 
-      description: 'Напишите программу, которая вычисляет сумму всех элементов списка',
+      title: 'Интернет и веб-технологии', 
+      description: 'Создайте программу о веб-технологиях и интернете',
       userAnswer: '',
       status: 'pending',
       maxPoints: 40,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Вычисление суммы элементов списка
-numbers = [1, 2, 3, 4, 5]
-total = 0
-for num in numbers:
-    total += num
-print(f"Сумма: {total}")`
+      initialCode: `# Интернет и веб-технологии
+print("Основы интернета:")
+print("- URL (уникальный адрес сайта)")
+print("- HTTP/HTTPS (протоколы передачи)")
+print("- HTML (язык разметки)")
+print("- CSS (стили оформления)")
+print("- JavaScript (интерактивность)")`
     }
   ]);
   const [code, setCode] = useState(tasks[0].initialCode);
@@ -70,7 +74,7 @@ print(f"Сумма: {total}")`
   // Загружаем прогресс урока при монтировании компонента
   React.useEffect(() => {
     if (user) {
-      const progress = getLessonProgress(user.id, 'algorithms', 1);
+      const progress = getLessonProgress(user.id, 'ict', 1);
       setLessonProgress(progress);
     }
   }, [user]);
@@ -160,8 +164,8 @@ print(f"Сумма: {total}")`
         user.id,
         'grade',
         'Новый результат в журнале',
-        `Практика по Алгоритмизации - Урок 1: ${totalGainedPoints}/${totalMaxPoints}. Нажмите, чтобы открыть.`,
-        1,
+        `Практика по ИКТ - Урок 1: ${totalGainedPoints}/${totalMaxPoints}. Нажмите, чтобы открыть.`,
+        3,
         1
       );
 
@@ -176,7 +180,7 @@ print(f"Сумма: {total}")`
 
   const handleBackToLessons = () => {
     if (onPageChange) {
-      onPageChange('programming-basics');
+      onPageChange('ict-basics');
     }
   };
 
@@ -185,10 +189,10 @@ print(f"Сумма: {total}")`
     
     // Обновляем прогресс секции для всех разделов
     if (user) {
-      updateLessonProgress(user.id, 'algorithms', 1, section);
+      updateLessonProgress(user.id, 'ict', 1, section);
       
       // Обновляем локальное состояние прогресса
-      const updatedProgress = getLessonProgress(user.id, 'algorithms', 1);
+      const updatedProgress = getLessonProgress(user.id, 'ict', 1);
       setLessonProgress(updatedProgress);
       
       // Показываем toast при завершении урока
@@ -215,10 +219,10 @@ print(f"Сумма: {total}")`
         className="text-center mb-8 sm:mb-12 px-4 sm:px-6"
       >
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          Введение в программирование
+          Введение в ИКТ
         </h1>
         <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
-          Изучите основы программирования и алгоритмического мышления
+          Изучите основы информационных и коммуникационных технологий
         </p>
       </motion.div>
 
@@ -329,8 +333,8 @@ print(f"Сумма: {total}")`
             <div className="bg-gray-900 rounded-lg aspect-video flex items-center justify-center mb-6">
               <div className="text-center text-white">
                 <Play className="w-16 h-16 mx-auto mb-4 opacity-80" />
-                <p className="text-lg font-medium">Видео "Основы программирования"</p>
-                <p className="text-sm opacity-70 mt-2">Длительность: 12 минут</p>
+                <p className="text-lg font-medium">Видео "Основы ИКТ"</p>
+                <p className="text-sm opacity-70 mt-2">Длительность: 14 минут</p>
               </div>
             </div>
             
@@ -339,19 +343,19 @@ print(f"Сумма: {total}")`
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Что такое программа и алгоритм
+                  Основы информационных технологий
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Как компьютер выполняет инструкции
+                  Программное и аппаратное обеспечение
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Логика и последовательность команд
+                  Типы файлов и их расширения
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Основные шаги написания программы
+                  Интернет и веб-технологии
                 </li>
               </ul>
             </div>
@@ -372,42 +376,45 @@ print(f"Сумма: {total}")`
             </div>
             
             <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Что такое программирование?</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Что такое ИКТ?</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                <strong>Программирование</strong> — это процесс создания инструкций, которые компьютер может выполнять.
-                Программа состоит из последовательности команд, которые определяют, что должен делать компьютер.
+                <strong>ИКТ (Информационно-коммуникационные технологии)</strong> — это технологии, 
+                используемые для обработки, хранения, передачи и получения информации.
               </p>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Основные принципы:</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Основные компоненты ИКТ:</h3>
               
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Алгоритмическое мышление</h4>
-                  <p className="text-gray-700 mb-2">Разбиение сложных задач на простые шаги.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Аппаратное обеспечение</h4>
+                  <p className="text-gray-700 mb-2">Физические устройства: процессор, память, монитор, клавиатура.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    1. Прочитать число<br/>
-                    2. Проверить четность<br/>
-                    3. Вывести результат
+                    Процессор (CPU)<br/>
+                    Оперативная память (RAM)<br/>
+                    Жесткий диск (HDD/SSD)<br/>
+                    Видеокарта (GPU)
                   </code>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Логика</h4>
-                  <p className="text-gray-700 mb-2">Четкие и последовательные инструкции.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Программное обеспечение</h4>
+                  <p className="text-gray-700 mb-2">Программы и приложения: операционные системы, редакторы, браузеры.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    if number % 2 == 0:<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print("Четное")<br/>
-                    else:<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print("Нечетное")
+                    Windows, macOS, Linux<br/>
+                    Microsoft Office<br/>
+                    Браузеры (Chrome, Firefox)<br/>
+                    Антивирусы (Kaspersky)
                   </code>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Структурированность</h4>
-                  <p className="text-gray-700 mb-2">Организованный и читаемый код.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Сети и интернет</h4>
+                  <p className="text-gray-700 mb-2">Связь между устройствами и доступ к информации.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    for i in range(1, 6):<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print(i)
+                    URL (адрес сайта)<br/>
+                    HTTP/HTTPS (протоколы)<br/>
+                    HTML/CSS (веб-технологии)<br/>
+                    Wi-Fi, Ethernet (сети)
                   </code>
                 </div>
               </div>
@@ -614,4 +621,4 @@ print(f"Сумма: {total}")`
   );
 };
 
-export default Lesson1;
+export default ICTLesson1;

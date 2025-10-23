@@ -1,6 +1,11 @@
 // Мини база данных для аутентификации
 const USERS_DB = 'educode_users';
 const CURRENT_USER_DB = 'educode_current_user';
+const COURSES_DB = 'educode_courses';
+const NOTIFICATIONS_DB = 'educode_notifications';
+const SUBMISSIONS_DB = 'educode_submissions';
+const PROGRESS_DB = 'educode_progress';
+const GRADES_DB = 'educode_grades';
 
 // Предустановленные пользователи для тестирования
 const DEFAULT_USERS = [
@@ -14,14 +19,33 @@ const DEFAULT_USERS = [
   },
   {
     id: 2,
-    email: 'test@educode.com',
-    password: 'test123',
-    fullName: 'Тестовый пользователь',
-    role: 'user',
+    email: 'algoritmika@educode.com',
+    password: 'algoritmika123',
+    fullName: 'Алгоритмика Преподаватель',
+    role: 'teacher',
+    teacherId: 'teacher_algoritmika',
     createdAt: new Date().toISOString()
   },
   {
     id: 3,
+    email: 'database@educode.com',
+    password: 'database123',
+    fullName: 'База Данных Преподаватель',
+    role: 'teacher',
+    teacherId: 'teacher_database',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 4,
+    email: 'ict@educode.com',
+    password: 'ict123',
+    fullName: 'ИКТ Преподаватель',
+    role: 'teacher',
+    teacherId: 'teacher_ict',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 5,
     email: 'student@educode.com',
     password: 'student123',
     fullName: 'Алина',
@@ -30,12 +54,214 @@ const DEFAULT_USERS = [
   }
 ];
 
+// Предустановленные курсы
+const DEFAULT_COURSES = [
+  {
+    id: 1,
+    title: 'Алгоритмизация',
+    description: 'Основы программирования и алгоритмов',
+    teacherId: 'teacher_algoritmika',
+    teacherName: 'Алгоритмика Преподаватель',
+    category: 'Программирование',
+    status: 'active',
+    lessons: [
+      {
+        id: 1,
+        title: 'Введение в программирование',
+        description: 'Основы алгоритмов и структур данных',
+        content: 'В этом уроке мы изучим основы программирования...',
+        videoUrl: '',
+        tasks: [
+          {
+            id: 1,
+            title: 'Сортировка массива',
+            description: 'Реализуйте алгоритм сортировки пузырьком',
+            initialCode: 'def bubble_sort(arr):\n    # Ваш код здесь\n    pass',
+            expectedOutput: 'Отсортированный массив'
+          }
+        ]
+      },
+      {
+        id: 2,
+        title: 'Рекурсия',
+        description: 'Изучаем рекурсивные алгоритмы',
+        content: 'Рекурсия - это когда функция вызывает сама себя...',
+        videoUrl: '',
+        tasks: [
+          {
+            id: 2,
+            title: 'Факториал',
+            description: 'Напишите рекурсивную функцию для вычисления факториала',
+            initialCode: 'def factorial(n):\n    # Ваш код здесь\n    pass',
+            expectedOutput: 'Факториал числа'
+          }
+        ]
+      }
+    ],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 2,
+    title: 'База данных',
+    description: 'SQL и управление данными',
+    teacherId: 'teacher_database',
+    teacherName: 'База Данных Преподаватель',
+    category: 'База данных',
+    status: 'active',
+    lessons: [
+      {
+        id: 3,
+        title: 'Основы SQL',
+        description: 'Изучаем язык запросов SQL',
+        content: 'SQL - это язык для работы с базами данных...',
+        videoUrl: '',
+        tasks: [
+          {
+            id: 3,
+            title: 'Создание таблиц',
+            description: 'Создайте таблицу пользователей',
+            initialCode: 'CREATE TABLE users (\n    -- Ваш код здесь\n);',
+            expectedOutput: 'Таблица создана'
+          }
+        ]
+      }
+    ],
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 3,
+    title: 'ИКТ',
+    description: 'Информационно-коммуникационные технологии',
+    teacherId: 'teacher_ict',
+    teacherName: 'ИКТ Преподаватель',
+    category: 'ИКТ',
+    status: 'active',
+    lessons: [
+      {
+        id: 4,
+        title: 'Введение в ИКТ',
+        description: 'Основы информационных технологий',
+        content: 'ИКТ включает в себя различные технологии...',
+        videoUrl: '',
+        tasks: [
+          {
+            id: 4,
+            title: 'Создание презентации',
+            description: 'Создайте презентацию на тему ИКТ',
+            initialCode: '// Создайте презентацию\n// Используйте PowerPoint или аналоги',
+            expectedOutput: 'Презентация готова'
+          }
+        ]
+      }
+    ],
+    createdAt: new Date().toISOString()
+  }
+];
+
+// Предустановленные уведомления
+const DEFAULT_NOTIFICATIONS = [
+  {
+    id: 1,
+    teacherId: 'teacher_algoritmika',
+    type: 'submission',
+    title: 'Новое задание от студента',
+    message: 'Алина отправила решение задачи "Сортировка массива"',
+    studentName: 'Алина',
+    courseTitle: 'Алгоритмизация',
+    taskTitle: 'Сортировка массива',
+    submissionId: 1,
+    timestamp: new Date().toISOString(),
+    read: false
+  },
+  {
+    id: 2,
+    teacherId: 'teacher_database',
+    type: 'submission',
+    title: 'Новое задание от студента',
+    message: 'Максим отправил решение задачи "Создание таблиц"',
+    studentName: 'Максим',
+    courseTitle: 'База данных',
+    taskTitle: 'Создание таблиц',
+    submissionId: 2,
+    timestamp: new Date().toISOString(),
+    read: false
+  }
+];
+
+// Предустановленные отправки заданий
+const DEFAULT_SUBMISSIONS = [
+  {
+    id: 1,
+    studentId: 5,
+    studentName: 'Алина',
+    courseId: 1,
+    courseTitle: 'Алгоритмизация',
+    lessonId: 1,
+    taskId: 1,
+    taskTitle: 'Сортировка массива',
+    code: 'def bubble_sort(arr):\n    n = len(arr)\n    for i in range(n):\n        for j in range(0, n-i-1):\n            if arr[j] > arr[j+1]:\n                arr[j], arr[j+1] = arr[j+1], arr[j]\n    return arr',
+    originality: 95,
+    aiCheck: 'passed',
+    score: 85,
+    feedback: '',
+    status: 'pending',
+    submittedAt: new Date().toISOString()
+  },
+  {
+    id: 2,
+    studentId: 5,
+    studentName: 'Алина',
+    courseId: 2,
+    courseTitle: 'База данных',
+    lessonId: 3,
+    taskId: 3,
+    taskTitle: 'Создание таблиц',
+    code: 'CREATE TABLE users (\n    id INT PRIMARY KEY,\n    name VARCHAR(100),\n    email VARCHAR(100)\n);',
+    originality: 88,
+    aiCheck: 'warning',
+    score: 0,
+    feedback: '',
+    status: 'pending',
+    submittedAt: new Date().toISOString()
+  }
+];
+
 // Инициализация базы данных
 export const initDatabase = () => {
   const existingUsers = localStorage.getItem(USERS_DB);
   if (!existingUsers) {
     localStorage.setItem(USERS_DB, JSON.stringify(DEFAULT_USERS));
-    console.log('📊 База данных инициализирована с тестовыми пользователями');
+    console.log('📊 База данных пользователей инициализирована');
+  }
+
+  const existingCourses = localStorage.getItem(COURSES_DB);
+  if (!existingCourses) {
+    localStorage.setItem(COURSES_DB, JSON.stringify(DEFAULT_COURSES));
+    console.log('📚 База данных курсов инициализирована');
+  }
+
+  const existingNotifications = localStorage.getItem(NOTIFICATIONS_DB);
+  if (!existingNotifications) {
+    localStorage.setItem(NOTIFICATIONS_DB, JSON.stringify(DEFAULT_NOTIFICATIONS));
+    console.log('🔔 База данных уведомлений инициализирована');
+  }
+
+  const existingSubmissions = localStorage.getItem(SUBMISSIONS_DB);
+  if (!existingSubmissions) {
+    localStorage.setItem(SUBMISSIONS_DB, JSON.stringify(DEFAULT_SUBMISSIONS));
+    console.log('📝 База данных отправок инициализирована');
+  }
+
+  const existingProgress = localStorage.getItem(PROGRESS_DB);
+  if (!existingProgress) {
+    localStorage.setItem(PROGRESS_DB, JSON.stringify({}));
+    console.log('📈 База данных прогресса инициализирована');
+  }
+
+  const existingGrades = localStorage.getItem(GRADES_DB);
+  if (!existingGrades) {
+    localStorage.setItem(GRADES_DB, JSON.stringify({}));
+    console.log('📊 База данных оценок инициализирована');
   }
 };
 
@@ -43,6 +269,67 @@ export const initDatabase = () => {
 export const getUsers = () => {
   const users = localStorage.getItem(USERS_DB);
   return users ? JSON.parse(users) : [];
+};
+
+// Получить все курсы
+export const getCourses = () => {
+  const courses = localStorage.getItem(COURSES_DB);
+  return courses ? JSON.parse(courses) : [];
+};
+
+// Получить курсы преподавателя
+export const getTeacherCourses = (teacherId) => {
+  const courses = getCourses();
+  return courses.filter(course => course.teacherId === teacherId);
+};
+
+// Получить курс по ID
+export const getCourseById = (courseId) => {
+  const courses = getCourses();
+  return courses.find(course => course.id === parseInt(courseId));
+};
+
+// Обновить курс
+export const updateCourse = (courseId, updatedCourse) => {
+  const courses = getCourses();
+  const index = courses.findIndex(course => course.id === parseInt(courseId));
+  if (index !== -1) {
+    courses[index] = { ...courses[index], ...updatedCourse };
+    localStorage.setItem(COURSES_DB, JSON.stringify(courses));
+    return true;
+  }
+  return false;
+};
+
+// Получить уведомления преподавателя
+export const getTeacherNotifications = (teacherId) => {
+  const notifications = localStorage.getItem(NOTIFICATIONS_DB);
+  const allNotifications = notifications ? JSON.parse(notifications) : [];
+  return allNotifications.filter(notification => notification.teacherId === teacherId);
+};
+
+
+// Получить отправки для преподавателя
+export const getTeacherSubmissions = (teacherId) => {
+  const submissions = localStorage.getItem(SUBMISSIONS_DB);
+  const allSubmissions = submissions ? JSON.parse(submissions) : [];
+  const courses = getCourses();
+  const teacherCourses = courses.filter(course => course.teacherId === teacherId);
+  const teacherCourseIds = teacherCourses.map(course => course.id);
+  return allSubmissions.filter(submission => teacherCourseIds.includes(submission.courseId));
+};
+
+// Обновить отправку (оценка, обратная связь)
+export const updateSubmission = (submissionId, updates) => {
+  const submissions = localStorage.getItem(SUBMISSIONS_DB);
+  const allSubmissions = submissions ? JSON.parse(submissions) : [];
+  const index = allSubmissions.findIndex(s => s.id === submissionId);
+  if (index !== -1) {
+    allSubmissions[index] = { ...allSubmissions[index], ...updates };
+    localStorage.setItem(SUBMISSIONS_DB, JSON.stringify(allSubmissions));
+    return true;
+  }
+  return false;
 };
 
 // Найти пользователя по email
@@ -89,7 +376,7 @@ export const register = (email, password, fullName) => {
     email: email.toLowerCase(),
     password,
     fullName,
-    role: 'user',
+    role: 'student', // По умолчанию студент
     createdAt: new Date().toISOString()
   };
   
@@ -231,4 +518,244 @@ export const clearDatabase = () => {
   initDatabase();
   
   return { success: true, message: 'База данных очищена и переинициализирована' };
+};
+
+// Функции для управления прогрессом
+export const getUserProgress = (userId) => {
+  const progress = localStorage.getItem(PROGRESS_DB);
+  const progressData = progress ? JSON.parse(progress) : {};
+  return progressData[userId] || {};
+};
+
+export const updateUserProgress = (userId, courseId, lessonId, completed = true) => {
+  const progress = localStorage.getItem(PROGRESS_DB);
+  const progressData = progress ? JSON.parse(progress) : {};
+  
+  if (!progressData[userId]) {
+    progressData[userId] = {};
+  }
+  
+  if (!progressData[userId][courseId]) {
+    progressData[userId][courseId] = {};
+  }
+  
+  progressData[userId][courseId][lessonId] = {
+    completed,
+    completedAt: completed ? new Date().toISOString() : null
+  };
+  
+  localStorage.setItem(PROGRESS_DB, JSON.stringify(progressData));
+  return { success: true };
+};
+
+
+export const getCourseProgress = (userId, courseId) => {
+  const progress = getUserProgress(userId);
+  const courseProgress = progress[courseId] || {};
+  const completedLessons = Object.values(courseProgress).filter(lesson => lesson.completed).length;
+  return completedLessons;
+};
+
+// Функции для управления оценками
+export const getUserGrades = (userId) => {
+  const grades = localStorage.getItem(GRADES_DB);
+  const gradesData = grades ? JSON.parse(grades) : {};
+  return gradesData[userId] || {};
+};
+
+export const saveGrade = (userId, courseId, lessonId, grade, maxGrade = 100) => {
+  const grades = localStorage.getItem(GRADES_DB);
+  const gradesData = grades ? JSON.parse(grades) : {};
+  
+  if (!gradesData[userId]) {
+    gradesData[userId] = {};
+  }
+  
+  if (!gradesData[userId][courseId]) {
+    gradesData[userId][courseId] = {};
+  }
+  
+  gradesData[userId][courseId][lessonId] = {
+    grade,
+    maxGrade,
+    percentage: Math.round((grade / maxGrade) * 100),
+    completedAt: new Date().toISOString(),
+    status: grade >= 70 ? 'passed' : 'failed'
+  };
+  
+  localStorage.setItem(GRADES_DB, JSON.stringify(gradesData));
+  return { success: true };
+};
+
+export const getLessonGrade = (userId, courseId, lessonId) => {
+  const grades = getUserGrades(userId);
+  return grades[courseId]?.[lessonId] || null;
+};
+
+export const getCourseGrades = (userId, courseId) => {
+  const grades = getUserGrades(userId);
+  return grades[courseId] || {};
+};
+
+export const calculateCourseAverage = (userId, courseId) => {
+  const courseGrades = getCourseGrades(userId, courseId);
+  const grades = Object.values(courseGrades);
+  
+  if (grades.length === 0) return 0;
+  
+  const totalPercentage = grades.reduce((sum, grade) => sum + grade.percentage, 0);
+  return Math.round(totalPercentage / grades.length);
+};
+
+// Функции для управления уведомлениями
+export const getUserNotifications = (userId) => {
+  if (!userId) return [];
+  const notifications = localStorage.getItem(NOTIFICATIONS_DB);
+  const notificationsData = notifications ? JSON.parse(notifications) : {};
+  const userNotifications = notificationsData[userId];
+  return Array.isArray(userNotifications) ? userNotifications : [];
+};
+
+export const addNotification = (userId, type, title, message, courseId = null, lessonId = null) => {
+  const notifications = localStorage.getItem(NOTIFICATIONS_DB);
+  const notificationsData = notifications ? JSON.parse(notifications) : {};
+  
+  if (!notificationsData[userId]) {
+    notificationsData[userId] = [];
+  }
+  
+  const notification = {
+    id: Date.now(),
+    type, // 'grade', 'lesson_completed', 'course_unlocked'
+    title,
+    message,
+    courseId,
+    lessonId,
+    createdAt: new Date().toISOString(),
+    read: false
+  };
+  
+  notificationsData[userId].unshift(notification); // Добавляем в начало
+  localStorage.setItem(NOTIFICATIONS_DB, JSON.stringify(notificationsData));
+  return { success: true };
+};
+
+export const markNotificationAsRead = (userId, notificationId) => {
+  const notifications = localStorage.getItem(NOTIFICATIONS_DB);
+  const notificationsData = notifications ? JSON.parse(notifications) : {};
+  
+  if (notificationsData[userId]) {
+    const notification = notificationsData[userId].find(n => n.id === notificationId);
+    if (notification) {
+      notification.read = true;
+      localStorage.setItem(NOTIFICATIONS_DB, JSON.stringify(notificationsData));
+    }
+  }
+  return { success: true };
+};
+
+export const getUnreadNotificationsCount = (userId) => {
+  if (!userId) return 0;
+  const notifications = getUserNotifications(userId);
+  if (!Array.isArray(notifications)) return 0;
+  return notifications.filter(n => !n.read).length;
+};
+
+// Функции для управления прогрессом уроков
+export const getLessonProgress = (userId, courseId, lessonId) => {
+  const progress = localStorage.getItem(PROGRESS_DB);
+  const progressData = progress ? JSON.parse(progress) : {};
+  
+  if (!progressData[userId]) {
+    progressData[userId] = {};
+  }
+  
+  if (!progressData[userId][courseId]) {
+    progressData[userId][courseId] = {};
+  }
+  
+  return progressData[userId][courseId][lessonId] || {
+    completed: false,
+    unlocked: lessonId === 1, // Первый урок всегда разблокирован
+    sectionsCompleted: {
+      video: false,
+      theory: false,
+      practice: false
+    }
+  };
+};
+
+export const updateLessonProgress = (userId, courseId, lessonId, sectionCompleted) => {
+  const progress = localStorage.getItem(PROGRESS_DB);
+  const progressData = progress ? JSON.parse(progress) : {};
+  
+  if (!progressData[userId]) {
+    progressData[userId] = {};
+  }
+  
+  if (!progressData[userId][courseId]) {
+    progressData[userId][courseId] = {};
+  }
+  
+  if (!progressData[userId][courseId][lessonId]) {
+    progressData[userId][courseId][lessonId] = {
+      completed: false,
+      unlocked: lessonId === 1,
+      sectionsCompleted: {
+        video: false,
+        theory: false,
+        practice: false
+      }
+    };
+  }
+  
+  // Обновляем секцию
+  progressData[userId][courseId][lessonId].sectionsCompleted[sectionCompleted] = true;
+  
+  // Проверяем, завершен ли урок
+  const sections = progressData[userId][courseId][lessonId].sectionsCompleted;
+  const isCompleted = sections.video && sections.theory && sections.practice;
+  
+  if (isCompleted && !progressData[userId][courseId][lessonId].completed) {
+    progressData[userId][courseId][lessonId].completed = true;
+    
+    // Разблокируем следующий урок
+    const nextLessonId = lessonId + 1;
+    if (!progressData[userId][courseId][nextLessonId]) {
+      progressData[userId][courseId][nextLessonId] = {
+        completed: false,
+        unlocked: true,
+        sectionsCompleted: {
+          video: false,
+          theory: false,
+          practice: false
+        }
+      };
+    } else {
+      progressData[userId][courseId][nextLessonId].unlocked = true;
+    }
+    
+    // Добавляем уведомление о разблокировке следующего урока
+    addNotification(
+      userId,
+      'lesson_unlocked',
+      'Новый урок разблокирован!',
+      `Урок ${nextLessonId} курса "${courseId}" теперь доступен для изучения.`,
+      courseId,
+      nextLessonId
+    );
+  }
+  
+  localStorage.setItem(PROGRESS_DB, JSON.stringify(progressData));
+  return { success: true };
+};
+
+export const isLessonUnlocked = (userId, courseId, lessonId) => {
+  const lessonProgress = getLessonProgress(userId, courseId, lessonId);
+  return lessonProgress.unlocked;
+};
+
+export const isLessonCompleted = (userId, courseId, lessonId) => {
+  const lessonProgress = getLessonProgress(userId, courseId, lessonId);
+  return lessonProgress.completed;
 };

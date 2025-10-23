@@ -3,12 +3,12 @@ import { motion } from 'framer-motion';
 import { ArrowLeft, Play, CheckCircle, Clock, BookOpen, Code, Lightbulb, FileText, Star, Trophy } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { updateUserProgress, saveGrade, addNotification, updateLessonProgress, getLessonProgress } from '../utils/auth.js';
+import { updateUserProgress, saveGrade, addNotification } from '../utils/auth.js';
 import Toast from '../components/Toast.jsx';
 import CodeRunner from '../components/CodeRunner.jsx';
 import BackButton from '../components/BackButton.jsx';
 
-const Lesson1 = ({ onPageChange }) => {
+const DatabaseLesson1 = ({ onPageChange }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [currentSection, setCurrentSection] = useState('video'); // 'video', 'theory', or 'practice'
@@ -17,63 +17,53 @@ const Lesson1 = ({ onPageChange }) => {
   const [lessonGrade, setLessonGrade] = useState(null);
   const [taskResults, setTaskResults] = useState([]);
   const [toast, setToast] = useState(null);
-  const [lessonProgress, setLessonProgress] = useState(null);
   const [tasks, setTasks] = useState([
     {
       id: 'task-1',
-      title: 'Вывод чисел от 1 до 5',
-      description: 'Напишите алгоритм, который выводит числа от 1 до 5',
+      title: 'Создание таблицы',
       userAnswer: '',
       status: 'pending',
       maxPoints: 30,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Напишите алгоритм, который выводит числа от 1 до 5
-for i in range(1, 6):
-    print(i)`
+      initialCode: `-- Создание таблицы products
+CREATE TABLE products (
+    id INT PRIMARY KEY AUTO_INCREMENT,
+    name VARCHAR(100) NOT NULL,
+    price DECIMAL(10,2) NOT NULL,
+    category VARCHAR(50)
+);`
     },
     {
       id: 'task-2', 
-      title: 'Проверка четности числа',
-      description: 'Напишите программу, которая проверяет, является ли число четным',
+      title: 'Вставка данных',
       userAnswer: '',
       status: 'pending',
       maxPoints: 30,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Проверка четности числа
-number = int(input("Введите число: "))
-if number % 2 == 0:
-    print("Число четное")
-else:
-    print("Число нечетное")`
+      initialCode: `-- Вставка данных в таблицу products
+INSERT INTO products (name, price, category) VALUES
+('iPhone 15', 999.99, 'Электроника'),
+('MacBook Pro', 1999.99, 'Электроника'),
+('Книга по SQL', 29.99, 'Книги');`
     },
     {
       id: 'task-3',
-      title: 'Сумма элементов списка', 
-      description: 'Напишите программу, которая вычисляет сумму всех элементов списка',
+      title: 'Выборка данных', 
       userAnswer: '',
       status: 'pending',
       maxPoints: 40,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Вычисление суммы элементов списка
-numbers = [1, 2, 3, 4, 5]
-total = 0
-for num in numbers:
-    total += num
-print(f"Сумма: {total}")`
+      initialCode: `-- Выборка товаров из категории "Электроника"
+SELECT name, price 
+FROM products 
+WHERE category = 'Электроника';`
     }
   ]);
   const [code, setCode] = useState(tasks[0].initialCode);
 
-  // Загружаем прогресс урока при монтировании компонента
-  React.useEffect(() => {
-    if (user) {
-      const progress = getLessonProgress(user.id, 'algorithms', 1);
-      setLessonProgress(progress);
-    }
-  }, [user]);
 
   const handleRunCode = (isSuccess, result) => {
     // Проверяем текущее задание
@@ -112,26 +102,19 @@ print(f"Сумма: {total}")`
   const handleNextTask = () => {
     if (currentTask < tasks.length - 1) {
       setCurrentTask(currentTask + 1);
-      setCode(tasks[currentTask + 1].initialCode);
-    }
-  };
-
-  const handlePrevTask = () => {
-    if (currentTask > 0) {
-      setCurrentTask(currentTask - 1);
-      setCode(tasks[currentTask - 1].userAnswer || tasks[currentTask - 1].initialCode);
+      setCode(tasks[currentTask + 1].userAnswer || tasks[currentTask + 1].initialCode || '');
     }
   };
 
   const handleSubmitResults = async () => {
+    console.log('Попытка отправить результаты...');
+    console.log('Текущие задания:', tasks.map(t => ({ title: t.title, status: t.status })));
+    
     const allChecked = tasks.every(t => t.status !== 'pending');
+    console.log('Все задания проверены:', allChecked);
     
     if (!allChecked) {
-      setToast({
-        message: 'Проверьте все задания перед завершением урока',
-        type: 'error',
-        duration: 3000
-      });
+      console.log('Не все задания проверены, выход из функции');
       return;
     }
 
@@ -141,64 +124,81 @@ print(f"Сумма: {total}")`
     const failed = tasks.filter(t => t.status === 'failed').length;
     const percent = Math.round((totalGainedPoints / totalMaxPoints) * 100);
 
-    // Симуляция отправки результатов
+    const payload = {
+      lessonId: 'db-lesson-1',
+      totalTasks: tasks.length,
+      passed,
+      failed,
+      totalMaxPoints,
+      totalGainedPoints,
+      percent,
+      details: tasks.map(t => ({
+        taskId: t.id,
+        status: t.status,
+        gainedPoints: t.gainedPoints,
+        maxPoints: t.maxPoints,
+        errorExplanation: t.errorExplanation
+      }))
+    };
+
     try {
-      await new Promise(resolve => setTimeout(resolve, 1000));
-      
-      // Показываем результаты
-      setShowResults(true);
-      
-      // Показываем toast
-      setToast({
-        message: 'Результаты отправлены. Баллы появятся в журнале через несколько минут.',
-        type: 'success',
-        duration: 5000
+      // Симуляция API запроса
+      const response = await new Promise((resolve) => {
+        setTimeout(() => {
+          resolve({
+            ok: true,
+            json: () => Promise.resolve({
+              resultId: 'result-' + Date.now(),
+              message: 'accepted',
+              journalEntryId: 'journal-' + Date.now()
+            })
+          });
+        }, 1000);
       });
 
-      // Добавляем уведомление
-      addNotification(
-        user.id,
-        'grade',
-        'Новый результат в журнале',
-        `Практика по Алгоритмизации - Урок 1: ${totalGainedPoints}/${totalMaxPoints}. Нажмите, чтобы открыть.`,
-        1,
-        1
-      );
-
+      if (response.ok) {
+        const data = await response.json();
+        
+        // Показываем модал результатов
+        setShowResults(true);
+        
+        // Показываем toast
+        setToast({
+          message: 'Результаты отправлены. Баллы появятся в журнале через несколько минут.',
+          type: 'success',
+          duration: 5000
+        });
+        
+        // Обновляем уведомления
+        addNotification(
+          user.id,
+          'grade',
+          'Новый результат в журнале',
+          `Практика по Базам Данных: ${totalGainedPoints}/${totalMaxPoints}. Нажмите, чтобы открыть.`,
+          2,
+          1
+        );
+      }
     } catch (error) {
       setToast({
-        message: 'Ошибка при отправке результатов',
+        message: 'Ошибка при отправке результатов. Попробуйте еще раз.',
         type: 'error',
-        duration: 3000
+        duration: 4000
       });
+    }
+  };
+
+
+  const handlePrevTask = () => {
+    if (currentTask > 0) {
+      setCurrentTask(currentTask - 1);
+      setCode(tasks[currentTask - 1].userAnswer || tasks[currentTask - 1].initialCode || '');
     }
   };
 
   const handleBackToLessons = () => {
     if (onPageChange) {
-      onPageChange('programming-basics');
-    }
-  };
-
-  const handleSectionChange = (section) => {
-    setCurrentSection(section);
-    
-    // Обновляем прогресс секции для всех разделов
-    if (user) {
-      updateLessonProgress(user.id, 'algorithms', 1, section);
-      
-      // Обновляем локальное состояние прогресса
-      const updatedProgress = getLessonProgress(user.id, 'algorithms', 1);
-      setLessonProgress(updatedProgress);
-      
-      // Показываем toast при завершении урока
-      if (updatedProgress.completed && !lessonProgress?.completed) {
-        setToast({
-          message: 'Поздравляем! Урок завершен. Следующий урок разблокирован!',
-          type: 'success',
-          duration: 5000
-        });
-      }
+      onPageChange('database-basics');
     }
   };
 
@@ -215,10 +215,10 @@ print(f"Сумма: {total}")`
         className="text-center mb-8 sm:mb-12 px-4 sm:px-6"
       >
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          Введение в программирование
+          Основы SQL
         </h1>
         <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
-          Изучите основы программирования и алгоритмического мышления
+          Изучите основы работы с базами данных и SQL запросами
         </p>
       </motion.div>
 
@@ -232,7 +232,7 @@ print(f"Сумма: {total}")`
         <div className="bg-white rounded-xl shadow-lg p-6">
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             <motion.button
-              onClick={() => handleSectionChange('video')}
+              onClick={() => setCurrentSection('video')}
               className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                 currentSection === 'video'
                   ? 'bg-blue-50 border border-blue-200'
@@ -256,7 +256,7 @@ print(f"Сумма: {total}")`
             </motion.button>
             
             <motion.button
-              onClick={() => handleSectionChange('theory')}
+              onClick={() => setCurrentSection('theory')}
               className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                 currentSection === 'theory'
                   ? 'bg-blue-50 border border-blue-200'
@@ -280,7 +280,7 @@ print(f"Сумма: {total}")`
             </motion.button>
             
             <motion.button
-              onClick={() => handleSectionChange('practice')}
+              onClick={() => setCurrentSection('practice')}
               className={`w-full flex items-center gap-3 p-3 rounded-lg transition-all duration-200 ${
                 currentSection === 'practice'
                   ? 'bg-blue-50 border border-blue-200'
@@ -329,8 +329,8 @@ print(f"Сумма: {total}")`
             <div className="bg-gray-900 rounded-lg aspect-video flex items-center justify-center mb-6">
               <div className="text-center text-white">
                 <Play className="w-16 h-16 mx-auto mb-4 opacity-80" />
-                <p className="text-lg font-medium">Видео "Основы программирования"</p>
-                <p className="text-sm opacity-70 mt-2">Длительность: 12 минут</p>
+                <p className="text-lg font-medium">Видео "Основы SQL"</p>
+                <p className="text-sm opacity-70 mt-2">Длительность: 15 минут</p>
               </div>
             </div>
             
@@ -339,19 +339,19 @@ print(f"Сумма: {total}")`
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Что такое программа и алгоритм
+                  Основы работы с базами данных
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Как компьютер выполняет инструкции
+                  Создание таблиц с помощью CREATE TABLE
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Логика и последовательность команд
+                  Вставка данных с помощью INSERT
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Основные шаги написания программы
+                  Выборка данных с помощью SELECT
                 </li>
               </ul>
             </div>
@@ -372,42 +372,36 @@ print(f"Сумма: {total}")`
             </div>
             
             <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Что такое программирование?</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Что такое SQL?</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                <strong>Программирование</strong> — это процесс создания инструкций, которые компьютер может выполнять.
-                Программа состоит из последовательности команд, которые определяют, что должен делать компьютер.
+                <strong>SQL (Structured Query Language)</strong> — это язык структурированных запросов, 
+                предназначенный для управления реляционными базами данных.
               </p>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Основные принципы:</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Основные команды SQL:</h3>
               
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Алгоритмическое мышление</h4>
-                  <p className="text-gray-700 mb-2">Разбиение сложных задач на простые шаги.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">CREATE TABLE</h4>
+                  <p className="text-gray-700 mb-2">Создает новую таблицу в базе данных.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    1. Прочитать число<br/>
-                    2. Проверить четность<br/>
-                    3. Вывести результат
+                    CREATE TABLE products (id INT, name VARCHAR(100));
                   </code>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Логика</h4>
-                  <p className="text-gray-700 mb-2">Четкие и последовательные инструкции.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">INSERT INTO</h4>
+                  <p className="text-gray-700 mb-2">Добавляет новые записи в таблицу.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    if number % 2 == 0:<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print("Четное")<br/>
-                    else:<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print("Нечетное")
+                    INSERT INTO products VALUES (1, 'Ноутбук');
                   </code>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Структурированность</h4>
-                  <p className="text-gray-700 mb-2">Организованный и читаемый код.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">SELECT</h4>
+                  <p className="text-gray-700 mb-2">Выбирает данные из таблицы.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    for i in range(1, 6):<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print(i)
+                    SELECT * FROM products WHERE price &gt; 1000;
                   </code>
                 </div>
               </div>
@@ -447,6 +441,7 @@ print(f"Сумма: {total}")`
               initialCode={code}
               onCodeChange={handleCodeChange}
               onRunResult={handleRunCode}
+              language="sql"
             />
 
             {/* Navigation Buttons */}
@@ -473,7 +468,7 @@ print(f"Сумма: {total}")`
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >
-                  <Trophy className="w-4 h-4" />
+                  <CheckCircle className="w-4 h-4" />
                   Показать результаты
                 </motion.button>
               ) : (
@@ -488,118 +483,122 @@ print(f"Сумма: {total}")`
                 </motion.button>
               )}
             </div>
+
+            {/* Results Modal */}
+            {showResults && (
+              <motion.div
+                initial={{ opacity: 0, y: 20 }}
+                animate={{ opacity: 1, y: 0 }}
+                transition={{ duration: 0.5 }}
+                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+              >
+                <motion.div
+                  initial={{ opacity: 0, scale: 0.9 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ duration: 0.3 }}
+                  className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+                >
+                  {/* Header */}
+                  <div className="p-6 border-b border-gray-200">
+                    <h2 className="text-2xl font-bold text-gray-900">Результаты практики (Базы данных)</h2>
+                  </div>
+
+                  {/* Content */}
+                  <div className="p-6">
+                    {/* Summary */}
+                    <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Итоги</h3>
+                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-green-600">
+                            {tasks.filter(t => t.status === 'passed').length}
+                          </div>
+                          <div className="text-sm text-gray-600">Правильно</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-red-600">
+                            {tasks.filter(t => t.status === 'failed').length}
+                          </div>
+                          <div className="text-sm text-gray-600">Неправильно</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-blue-600">
+                            {tasks.reduce((s, t) => s + t.gainedPoints, 0)} / {tasks.reduce((s, t) => s + t.maxPoints, 0)}
+                          </div>
+                          <div className="text-sm text-gray-600">Баллы</div>
+                        </div>
+                        <div className="text-center">
+                          <div className="text-2xl font-bold text-purple-600">
+                            {Math.round((tasks.reduce((s, t) => s + t.gainedPoints, 0) / tasks.reduce((s, t) => s + t.maxPoints, 0)) * 100)}%
+                          </div>
+                          <div className="text-sm text-gray-600">Процент</div>
+                        </div>
+                      </div>
+                    </div>
+
+                    {/* Tasks Details */}
+                    <div className="mb-6">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Детали заданий</h3>
+                      <div className="space-y-3">
+                        {tasks.map((task, index) => (
+                          <div key={task.id} className="border border-gray-200 rounded-lg p-4">
+                            <div className="flex justify-between items-center mb-2">
+                              <h4 className="font-medium text-gray-900">{task.title}</h4>
+                              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                                task.status === 'passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                              }`}>
+                                {task.status === 'passed' ? '✓ Выполнено' : '✗ Ошибка'}
+                              </div>
+                            </div>
+                            <div className="text-sm text-gray-600 mb-2">
+                              Баллы: {task.gainedPoints} / {task.maxPoints}
+                            </div>
+                            {task.status === 'failed' && task.errorExplanation && (
+                              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                                <strong>Где ошибка:</strong> {task.errorExplanation}
+                              </div>
+                            )}
+                          </div>
+                        ))}
+                      </div>
+                    </div>
+
+                    {/* Info Message */}
+                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                      <p className="text-blue-800">
+                        Ваши баллы будут добавлены в журнал в течение нескольких минут.
+                      </p>
+                    </div>
+
+                    {/* Actions */}
+                    <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                      <motion.button
+                        onClick={() => setShowResults(false)}
+                        className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Закрыть
+                      </motion.button>
+                      <motion.button
+                        onClick={() => {
+                          setShowResults(false);
+                          onPageChange && onPageChange('journal');
+                        }}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Перейти в журнал
+                      </motion.button>
+                    </div>
+                  </div>
+                </motion.div>
+              </motion.div>
+            )}
           </motion.div>
         )}
       </motion.div>
-
-      {/* Results Modal */}
-      {showResults && (
-        <motion.div
-          initial={{ opacity: 0, y: 20 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.5 }}
-          className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-        >
-          <motion.div
-            initial={{ opacity: 0, scale: 0.9 }}
-            animate={{ opacity: 1, scale: 1 }}
-            transition={{ duration: 0.3 }}
-            className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-          >
-            <div className="p-6 border-b border-gray-200">
-              <h2 className="text-2xl font-bold text-gray-900">
-                Результаты практики
-              </h2>
-            </div>
-
-            <div className="p-6">
-              <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Итоги</h3>
-                <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-green-600">
-                      {tasks.filter(t => t.status === 'passed').length}
-                    </div>
-                    <div className="text-sm text-gray-600">Правильно</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-red-600">
-                      {tasks.filter(t => t.status === 'failed').length}
-                    </div>
-                    <div className="text-sm text-gray-600">Неправильно</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-blue-600">
-                      {tasks.reduce((s, t) => s + t.gainedPoints, 0)} / {tasks.reduce((s, t) => s + t.maxPoints, 0)}
-                    </div>
-                    <div className="text-sm text-gray-600">Баллы</div>
-                  </div>
-                  <div className="text-center">
-                    <div className="text-2xl font-bold text-purple-600">
-                      {Math.round((tasks.reduce((s, t) => s + t.gainedPoints, 0) / tasks.reduce((s, t) => s + t.maxPoints, 0)) * 100)}%
-                    </div>
-                    <div className="text-sm text-gray-600">Процент</div>
-                  </div>
-                </div>
-              </div>
-
-              <div className="space-y-4 mb-6">
-                <h3 className="text-lg font-semibold text-gray-900">Детали по заданиям</h3>
-                {tasks.map((task, index) => (
-                  <div key={task.id} className="bg-white border border-gray-200 rounded-lg p-4">
-                    <div className="flex items-center justify-between mb-2">
-                      <h4 className="font-medium text-gray-900">Задание {index + 1}: {task.title}</h4>
-                      <div className={`px-2 py-1 rounded text-xs font-medium ${
-                        task.status === 'passed' 
-                          ? 'bg-green-100 text-green-800' 
-                          : 'bg-red-100 text-red-800'
-                      }`}>
-                        {task.status === 'passed' ? 'Выполнено' : 'Ошибка'}
-                      </div>
-                    </div>
-                    <div className="text-sm text-gray-600">
-                      Баллы: {task.gainedPoints} / {task.maxPoints}
-                    </div>
-                    {task.errorExplanation && (
-                      <div className="text-sm text-red-600 mt-2">
-                        {task.errorExplanation}
-                      </div>
-                    )}
-                  </div>
-                ))}
-              </div>
-
-              <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                <p className="text-blue-800">
-                  Ваши баллы будут добавлены в журнал в течение нескольких минут.
-                </p>
-              </div>
-
-              <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                <motion.button
-                  onClick={() => setShowResults(false)}
-                  className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Закрыть
-                </motion.button>
-                <motion.button
-                  onClick={() => {
-                    setShowResults(false);
-                    onPageChange && onPageChange('journal');
-                  }}
-                  className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
-                  whileHover={{ scale: 1.02 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  Перейти в журнал
-                </motion.button>
-              </div>
-            </div>
-          </motion.div>
-        </motion.div>
-      )}
       
       {/* Toast */}
       {toast && (
@@ -614,4 +613,4 @@ print(f"Сумма: {total}")`
   );
 };
 
-export default Lesson1;
+export default DatabaseLesson1;

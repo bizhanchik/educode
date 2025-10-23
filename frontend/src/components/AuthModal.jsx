@@ -33,7 +33,7 @@ const TypewriterText = ({ text, delay = 0 }) => {
   );
 };
 
-const AuthModal = ({ isOpen, onClose, type, onSwitchModal }) => {
+const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
   const modalRef = useRef(null);
   const { t } = useLanguage();
   
@@ -136,6 +136,7 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal }) => {
         setSuccess('Успешный вход в систему!');
         setTimeout(() => {
           onClose();
+          onPageChange('courses');
         }, 1500);
       } else {
         setError(result.error);
@@ -152,6 +153,7 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal }) => {
         setSuccess('Регистрация успешна! Добро пожаловать!');
         setTimeout(() => {
           onClose();
+          onPageChange('courses');
         }, 1500);
       } else {
         setError(result.error);

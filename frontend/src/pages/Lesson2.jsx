@@ -8,7 +8,7 @@ import Toast from '../components/Toast.jsx';
 import CodeRunner from '../components/CodeRunner.jsx';
 import BackButton from '../components/BackButton.jsx';
 
-const Lesson1 = ({ onPageChange }) => {
+const Lesson2 = ({ onPageChange }) => {
   const { t } = useLanguage();
   const { user } = useAuth();
   const [currentSection, setCurrentSection] = useState('video'); // 'video', 'theory', or 'practice'
@@ -21,48 +21,51 @@ const Lesson1 = ({ onPageChange }) => {
   const [tasks, setTasks] = useState([
     {
       id: 'task-1',
-      title: 'Вывод чисел от 1 до 5',
-      description: 'Напишите алгоритм, который выводит числа от 1 до 5',
+      title: 'Типы данных',
+      description: 'Создайте переменные разных типов и выведите их значения',
       userAnswer: '',
       status: 'pending',
       maxPoints: 30,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Напишите алгоритм, который выводит числа от 1 до 5
-for i in range(1, 6):
-    print(i)`
+      initialCode: `# Создайте переменные разных типов
+age = 25
+name = "Анна"
+is_student = True
+print(f"Имя: {name}, Возраст: {age}, Студент: {is_student}")`
     },
     {
       id: 'task-2', 
-      title: 'Проверка четности числа',
-      description: 'Напишите программу, которая проверяет, является ли число четным',
+      title: 'Арифметические операции',
+      description: 'Выполните базовые арифметические операции с числами',
       userAnswer: '',
       status: 'pending',
       maxPoints: 30,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Проверка четности числа
-number = int(input("Введите число: "))
-if number % 2 == 0:
-    print("Число четное")
-else:
-    print("Число нечетное")`
+      initialCode: `# Выполните арифметические операции
+a = 10
+b = 5
+print(f"Сложение: {a + b}")
+print(f"Вычитание: {a - b}")
+print(f"Умножение: {a * b}")
+print(f"Деление: {a / b}")`
     },
     {
       id: 'task-3',
-      title: 'Сумма элементов списка', 
-      description: 'Напишите программу, которая вычисляет сумму всех элементов списка',
+      title: 'Работа со строками', 
+      description: 'Выполните операции со строками: конкатенация, форматирование',
       userAnswer: '',
       status: 'pending',
       maxPoints: 40,
       gainedPoints: 0,
       errorExplanation: '',
-      initialCode: `# Вычисление суммы элементов списка
-numbers = [1, 2, 3, 4, 5]
-total = 0
-for num in numbers:
-    total += num
-print(f"Сумма: {total}")`
+      initialCode: `# Работа со строками
+first_name = "Иван"
+last_name = "Петров"
+full_name = first_name + " " + last_name
+print(f"Полное имя: {full_name}")
+print(f"Длина имени: {len(full_name)}")`
     }
   ]);
   const [code, setCode] = useState(tasks[0].initialCode);
@@ -70,7 +73,7 @@ print(f"Сумма: {total}")`
   // Загружаем прогресс урока при монтировании компонента
   React.useEffect(() => {
     if (user) {
-      const progress = getLessonProgress(user.id, 'algorithms', 1);
+      const progress = getLessonProgress(user.id, 'algorithms', 2);
       setLessonProgress(progress);
     }
   }, [user]);
@@ -160,9 +163,9 @@ print(f"Сумма: {total}")`
         user.id,
         'grade',
         'Новый результат в журнале',
-        `Практика по Алгоритмизации - Урок 1: ${totalGainedPoints}/${totalMaxPoints}. Нажмите, чтобы открыть.`,
+        `Практика по Алгоритмизации - Урок 2: ${totalGainedPoints}/${totalMaxPoints}. Нажмите, чтобы открыть.`,
         1,
-        1
+        2
       );
 
     } catch (error) {
@@ -185,16 +188,16 @@ print(f"Сумма: {total}")`
     
     // Обновляем прогресс секции для всех разделов
     if (user) {
-      updateLessonProgress(user.id, 'algorithms', 1, section);
+      updateLessonProgress(user.id, 'algorithms', 2, section);
       
       // Обновляем локальное состояние прогресса
-      const updatedProgress = getLessonProgress(user.id, 'algorithms', 1);
+      const updatedProgress = getLessonProgress(user.id, 'algorithms', 2);
       setLessonProgress(updatedProgress);
       
       // Показываем toast при завершении урока
       if (updatedProgress.completed && !lessonProgress?.completed) {
         setToast({
-          message: 'Поздравляем! Урок завершен. Следующий урок разблокирован!',
+          message: 'Поздравляем! Урок завершен!',
           type: 'success',
           duration: 5000
         });
@@ -215,10 +218,10 @@ print(f"Сумма: {total}")`
         className="text-center mb-8 sm:mb-12 px-4 sm:px-6"
       >
         <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-4">
-          Введение в программирование
+          Переменные и типы данных
         </h1>
         <p className="text-base sm:text-lg text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
-          Изучите основы программирования и алгоритмического мышления
+          Изучите как хранить и обрабатывать информацию в программах
         </p>
       </motion.div>
 
@@ -329,8 +332,8 @@ print(f"Сумма: {total}")`
             <div className="bg-gray-900 rounded-lg aspect-video flex items-center justify-center mb-6">
               <div className="text-center text-white">
                 <Play className="w-16 h-16 mx-auto mb-4 opacity-80" />
-                <p className="text-lg font-medium">Видео "Основы программирования"</p>
-                <p className="text-sm opacity-70 mt-2">Длительность: 12 минут</p>
+                <p className="text-lg font-medium">Видео "Переменные и типы данных"</p>
+                <p className="text-sm opacity-70 mt-2">Длительность: 10 минут</p>
               </div>
             </div>
             
@@ -339,19 +342,19 @@ print(f"Сумма: {total}")`
               <ul className="space-y-2 text-gray-700">
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Что такое программа и алгоритм
+                  Что такое переменные и как их создавать
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Как компьютер выполняет инструкции
+                  Основные типы данных: числа, строки, логические значения
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Логика и последовательность команд
+                  Арифметические операции с числами
                 </li>
                 <li className="flex items-center gap-2">
                   <CheckCircle className="w-4 h-4 text-green-600" />
-                  Основные шаги написания программы
+                  Работа со строками и форматирование
                 </li>
               </ul>
             </div>
@@ -372,42 +375,42 @@ print(f"Сумма: {total}")`
             </div>
             
             <div className="prose max-w-none">
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Что такое программирование?</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Что такое переменные?</h3>
               <p className="text-gray-700 leading-relaxed mb-4">
-                <strong>Программирование</strong> — это процесс создания инструкций, которые компьютер может выполнять.
-                Программа состоит из последовательности команд, которые определяют, что должен делать компьютер.
+                <strong>Переменная</strong> — это именованная область памяти для хранения данных. 
+                В Python переменные создаются автоматически при присваивании значения.
               </p>
               
-              <h3 className="text-lg font-semibold text-gray-900 mb-4">Основные принципы:</h3>
+              <h3 className="text-lg font-semibold text-gray-900 mb-4">Основные типы данных:</h3>
               
               <div className="space-y-4">
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Алгоритмическое мышление</h4>
-                  <p className="text-gray-700 mb-2">Разбиение сложных задач на простые шаги.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Числа (int, float)</h4>
+                  <p className="text-gray-700 mb-2">Целые и дробные числа для математических операций.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    1. Прочитать число<br/>
-                    2. Проверить четность<br/>
-                    3. Вывести результат
+                    age = 25<br/>
+                    price = 99.99<br/>
+                    result = age + price
                   </code>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Логика</h4>
-                  <p className="text-gray-700 mb-2">Четкие и последовательные инструкции.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Строки (str)</h4>
+                  <p className="text-gray-700 mb-2">Текстовые данные в кавычках.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    if number % 2 == 0:<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print("Четное")<br/>
-                    else:<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print("Нечетное")
+                    name = "Анна"<br/>
+                    message = f"Привет, {name}!"<br/>
+                    print(message)
                   </code>
                 </div>
                 
                 <div className="bg-gray-50 rounded-lg p-4">
-                  <h4 className="font-semibold text-gray-900 mb-2">Структурированность</h4>
-                  <p className="text-gray-700 mb-2">Организованный и читаемый код.</p>
+                  <h4 className="font-semibold text-gray-900 mb-2">Логические значения (bool)</h4>
+                  <p className="text-gray-700 mb-2">True или False для условий.</p>
                   <code className="bg-gray-800 text-green-400 p-2 rounded text-sm block">
-                    for i in range(1, 6):<br/>
-                    &nbsp;&nbsp;&nbsp;&nbsp;print(i)
+                    is_student = True<br/>
+                    is_working = False<br/>
+                    if is_student: print("Студент")
                   </code>
                 </div>
               </div>
@@ -614,4 +617,4 @@ print(f"Сумма: {total}")`
   );
 };
 
-export default Lesson1;
+export default Lesson2;

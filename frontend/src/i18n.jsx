@@ -60,7 +60,7 @@ const ru = {
     "student": "Студент",
     "user": "Пользователь",
     "myCourses": "Мои курсы",
-    "lessons": "Уроки",
+    "notifications": "Уведомления",
     "journal": "Журнал",
     "settings": "Настройки",
     "logout": "Выйти"
@@ -130,7 +130,7 @@ const kk = {
     "student": "Студент",
     "user": "Пайдаланушы",
     "myCourses": "Менің курстарым",
-    "lessons": "Сабақтар",
+    "notifications": "Хабарландырулар",
     "journal": "Журнал",
     "settings": "Баптаулар",
     "logout": "Шығу"
@@ -199,7 +199,7 @@ const en = {
     "student": "Student",
     "user": "User",
     "myCourses": "My Courses",
-    "lessons": "Lessons",
+    "notifications": "Notifications",
     "journal": "Journal",
     "settings": "Settings",
     "logout": "Logout"

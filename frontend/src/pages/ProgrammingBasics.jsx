@@ -2,21 +2,38 @@ import React, { useState } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, PlayCircle, ArrowLeft, Lock, CheckCircle, Code, FileText } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
+import { useAuth } from '../hooks/useAuth.jsx';
+import { isLessonUnlocked, isLessonCompleted } from '../utils/auth.js';
+import BackButton from '../components/BackButton.jsx';
+import ResultsBlock from '../components/ResultsBlock.jsx';
+import CodeRunner from '../components/CodeRunner.jsx';
 
 const ProgrammingBasics = ({ onPageChange }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [currentLesson, setCurrentLesson] = useState(null);
   const [currentTask, setCurrentTask] = useState(0);
   const [code, setCode] = useState('');
   const [showTasks, setShowTasks] = useState(false);
+  const [showResults, setShowResults] = useState(false);
+  const [taskResults, setTaskResults] = useState([]);
+  const [forceUpdateCodeRef, setForceUpdateCodeRef] = useState(null);
 
-  const lessons = [
-    {
-      id: 1,
-      title: "Введение в программирование",
-      description: "Основные понятия и принципы программирования",
-      completed: false,
-      locked: false,
+  // Получаем динамические данные уроков
+  const getLessonsData = () => {
+    if (!user) return [];
+    
+    // Получаем актуальный прогресс из localStorage
+    const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
+    const courseProgress = userProgress[user.id]?.['algorithms'] || {};
+    
+    return [
+      {
+        id: 1,
+        title: "Введение в программирование",
+        description: "Основные понятия и принципы программирования",
+        completed: courseProgress[1]?.completed || false,
+        locked: false, // Первый урок всегда доступен
       theory: "Программирование — это процесс создания компьютерных программ. Программа — это набор инструкций, которые компьютер может выполнить. Основные принципы: алгоритмическое мышление, логика, структурированность.",
       tasks: [
         {
@@ -32,15 +49,22 @@ const ProgrammingBasics = ({ onPageChange }) => {
           description: "Создайте переменную с вашим именем и выведите приветствие.",
           initialCode: '# Создайте переменную с вашим именем\nname = "Ваше имя"\nprint(f"Привет, {name}!")',
           expectedOutput: "Привет, Ваше имя!"
+        },
+        {
+          id: 3,
+          title: "Задача 3: Сумма элементов списка",
+          description: "Напишите программу, которая вычисляет сумму всех элементов списка",
+          initialCode: '# Вычисление суммы элементов списка\nnumbers = [1, 2, 3, 4, 5]\ntotal = 0\nfor num in numbers:\n    total += num\nprint(f"Сумма: {total}")',
+          expectedOutput: "Сумма: 15"
         }
       ]
     },
-    {
-      id: 2,
-      title: "Переменные и типы данных",
-      description: "Как хранить и обрабатывать информацию",
-      completed: false,
-      locked: true,
+      {
+        id: 2,
+        title: "Переменные и типы данных",
+        description: "Как хранить и обрабатывать информацию",
+        completed: courseProgress[2]?.completed || false,
+        locked: !courseProgress[1]?.completed, // Разблокируется после завершения первого урока
       theory: "Переменная — это именованная область памяти для хранения данных. Типы данных: числа (int, float), строки (string), логические значения (boolean), массивы и объекты.",
       tasks: [
         {
@@ -59,16 +83,21 @@ const ProgrammingBasics = ({ onPageChange }) => {
         }
       ]
     }
-  ];
+    ];
+  };
+
+  const lessons = getLessonsData();
 
   const handleLessonClick = (lesson) => {
     if (!lesson.locked) {
       if (lesson.id === 1) {
-        // Переход на отдельную страницу для урока 1
-        if (onPageChange) {
-          onPageChange('lesson-1');
-        }
+        // Первый урок перенаправляет на Lesson1.jsx с новой структурой
+        onPageChange('lesson-1');
+      } else if (lesson.id === 2) {
+        // Второй урок перенаправляет на Lesson2.jsx с новой структурой
+        onPageChange('lesson-2');
       } else {
+        // Остальные уроки показываем внутри ProgrammingBasics
         setCurrentLesson(lesson);
         setCurrentTask(0);
         setCode(lesson.tasks[0]?.initialCode || '');
@@ -81,49 +110,129 @@ const ProgrammingBasics = ({ onPageChange }) => {
     setCurrentTask(0);
     setCode('');
     setShowTasks(false);
+    setShowResults(false);
+    setTaskResults([]);
+  };
+
+  const handleBackToLessonsFromResults = () => {
+    // Обновляем прогресс курса
+    if (user && currentLesson) {
+      // Здесь должна быть логика обновления прогресса в localStorage
+      const userProgress = JSON.parse(localStorage.getItem('userProgress') || '{}');
+      if (!userProgress[user.id]) {
+        userProgress[user.id] = {};
+      }
+      if (!userProgress[user.id]['algorithms']) {
+        userProgress[user.id]['algorithms'] = {};
+      }
+      
+      // Отмечаем урок как завершенный
+      userProgress[user.id]['algorithms'][currentLesson.id] = {
+        completed: true,
+        completedAt: new Date().toISOString(),
+        score: Math.round((taskResults.filter(r => r.completed).length / taskResults.length) * 100)
+      };
+      
+      localStorage.setItem('userProgress', JSON.stringify(userProgress));
+    }
+    
+    // Возвращаемся к урокам
+    handleBackToLessons();
+  };
+
+  const handleCodeChange = (newCode, forceUpdateFunction) => {
+    setCode(newCode);
+    if (forceUpdateFunction) {
+      setForceUpdateCodeRef(() => forceUpdateFunction);
+    }
   };
 
   const handleStartTasks = () => {
     setShowTasks(true);
     setCurrentTask(0);
-    setCode(currentLesson.tasks[0]?.initialCode || '');
+    const initialCode = currentLesson.tasks[0]?.initialCode || '';
+    setCode(initialCode);
+    
+    // Принудительно обновляем код в CodeRunner
+    if (forceUpdateCodeRef) {
+      forceUpdateCodeRef(initialCode);
+    }
+    
+    // Инициализируем результаты заданий
+    setTaskResults(currentLesson.tasks.map(task => ({
+      completed: false,
+      description: task.description,
+      error: null
+    })));
   };
 
   const handleNextTask = () => {
     if (currentLesson && currentTask < currentLesson.tasks.length - 1) {
-      setCurrentTask(currentTask + 1);
-      setCode(currentLesson.tasks[currentTask + 1].initialCode);
+      const nextTask = currentTask + 1;
+      setCurrentTask(nextTask);
+      const newCode = currentLesson.tasks[nextTask].initialCode;
+      setCode(newCode);
+      
+      // Принудительно обновляем код в CodeRunner
+      if (forceUpdateCodeRef) {
+        forceUpdateCodeRef(newCode);
+      }
     }
   };
 
   const handlePrevTask = () => {
     if (currentTask > 0) {
-      setCurrentTask(currentTask - 1);
-      setCode(currentLesson.tasks[currentTask - 1].initialCode);
+      const prevTask = currentTask - 1;
+      setCurrentTask(prevTask);
+      const newCode = currentLesson.tasks[prevTask].initialCode;
+      setCode(newCode);
+      
+      // Принудительно обновляем код в CodeRunner
+      if (forceUpdateCodeRef) {
+        forceUpdateCodeRef(newCode);
+      }
     }
   };
 
-  const handleRunCode = () => {
-    // Симуляция выполнения кода
-    const output = currentLesson.tasks[currentTask]?.expectedOutput || "Код выполнен успешно!";
-    alert(`Результат выполнения:\n\n${output}`);
+  const handleRunCode = (success, output) => {
+    // Обновляем результат текущего задания
+    const newResults = [...taskResults];
+    newResults[currentTask] = {
+      completed: success,
+      description: currentLesson.tasks[currentTask].description,
+      error: success ? null : output
+    };
+    setTaskResults(newResults);
+    
+    // Переходим к следующему заданию или показываем результаты
+    if (success && currentTask < currentLesson.tasks.length - 1) {
+      // Переходим к следующему заданию
+      setTimeout(() => {
+        const nextTask = currentTask + 1;
+        setCurrentTask(nextTask);
+        const newCode = currentLesson.tasks[nextTask].initialCode;
+        setCode(newCode);
+        
+        // Принудительно обновляем код в CodeRunner
+        if (forceUpdateCodeRef) {
+          forceUpdateCodeRef(newCode);
+        }
+      }, 1000);
+    } else if (success && currentTask === currentLesson.tasks.length - 1) {
+      // Все задания выполнены, показываем результаты
+      setTimeout(() => {
+        setShowResults(true);
+      }, 1000);
+    }
   };
 
   if (currentLesson) {
   return (
       <section className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-24">
+        {/* Back Button */}
+        <BackButton onClick={handleBackToLessons}>Назад к урокам</BackButton>
+        
         <div className="max-w-4xl mx-auto px-4 sm:px-6 md:px-8">
-          {/* Back Button */}
-          <div className="mb-4 sm:mb-6">
-            <motion.button
-              onClick={handleBackToLessons}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors text-sm sm:text-base font-medium"
-              whileHover={{ x: -4 }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Назад к урокам
-            </motion.button>
-          </div>
 
           {/* Lesson Header */}
           <div className="mb-8 sm:mb-12 md:mb-16">
@@ -234,35 +343,17 @@ const ProgrammingBasics = ({ onPageChange }) => {
                 </div>
 
                 {/* Code Editor */}
-                <div className="bg-gray-900 rounded-lg p-4 sm:p-6 mb-4 sm:mb-6">
-                  <div className="flex items-center justify-between mb-3 sm:mb-4">
-                    <h4 className="text-sm sm:text-base md:text-lg font-semibold text-white">Редактор кода</h4>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs sm:text-sm text-gray-400">Python</span>
-                      <div className="w-2 h-2 bg-green-500 rounded-full"></div>
-                    </div>
-                  </div>
-                  <textarea
-                    value={code}
-                    onChange={(e) => setCode(e.target.value)}
-                    className="w-full h-40 sm:h-48 md:h-56 bg-gray-800 text-green-400 font-mono text-xs sm:text-sm md:text-base p-3 sm:p-4 rounded-lg border border-gray-700 focus:border-blue-500 focus:outline-none resize-none"
-                    placeholder="Введите ваш код здесь..."
+                <div className="bg-white rounded-xl shadow-lg p-4 sm:p-6">
+                  <CodeRunner
+                    initialCode={code}
+                    onCodeChange={setCode}
+                    onRunResult={handleRunCode}
+                    language="python"
                   />
                 </div>
 
-                {/* Action Buttons */}
-                <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
-                  <motion.button
-                    onClick={handleRunCode}
-                    className="flex-1 px-4 sm:px-6 py-2 sm:py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 text-sm sm:text-base flex items-center justify-center gap-2"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    <PlayCircle className="w-4 h-4" />
-                    Запустить
-                  </motion.button>
-                  
-                  <div className="flex gap-3 sm:gap-4">
+                {/* Navigation Buttons */}
+                <div className="flex gap-3 sm:gap-4">
                     <motion.button
                       onClick={handlePrevTask}
                       disabled={currentTask === 0}
@@ -292,7 +383,6 @@ const ProgrammingBasics = ({ onPageChange }) => {
                       Далее
                       <ArrowLeft className="w-4 h-4 rotate-180" />
                     </motion.button>
-                  </div>
                 </div>
 
                 {/* Task Progress */}
@@ -312,20 +402,22 @@ const ProgrammingBasics = ({ onPageChange }) => {
             )}
           </div>
 
+          {/* Results Block */}
+          {showResults && (
+            <ResultsBlock 
+              tasks={taskResults} 
+              onBackToLessons={handleBackToLessonsFromResults}
+            />
+          )}
+
           {/* Lesson Navigation */}
+          {!showResults && (
           <div className="flex justify-between items-center pt-6 border-t border-gray-200">
             <div className="text-sm text-gray-500">
               Урок {currentLesson.id} из {lessons.length}
             </div>
-            <motion.button
-              onClick={handleBackToLessons}
-              className="flex items-center gap-2 text-gray-500 hover:text-gray-700 transition-colors text-sm sm:text-base font-medium"
-              whileHover={{ x: -4 }}
-            >
-              <ArrowLeft className="w-4 h-4" />
-              Назад к урокам
-            </motion.button>
           </div>
+          )}
         </div>
       </section>
     );
@@ -333,19 +425,10 @@ const ProgrammingBasics = ({ onPageChange }) => {
 
   return (
     <section className="min-h-screen bg-gray-50 pt-16 sm:pt-20 md:pt-24">
+      {/* Back Button */}
+      <BackButton onClick={() => onPageChange('courses')}>Назад к курсам</BackButton>
+      
       <div className="max-w-6xl mx-auto px-4 sm:px-6 md:px-8">
-        {/* Back Button */}
-        <div className="mb-4 sm:mb-6">
-          <motion.button
-            onClick={() => onPageChange('courses')}
-            className="px-4 sm:px-6 py-2 sm:py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200 text-sm sm:text-base flex items-center gap-2"
-            whileHover={{ scale: 1.02 }}
-            whileTap={{ scale: 0.98 }}
-          >
-            <ArrowLeft className="w-4 h-4" />
-            Назад к курсам
-          </motion.button>
-        </div>
 
         {/* Course Header */}
         <div className="mb-8 sm:mb-12 md:mb-16">
@@ -353,12 +436,9 @@ const ProgrammingBasics = ({ onPageChange }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6 }}
-            className="flex flex-col sm:flex-row items-center gap-2 sm:gap-3 mb-4 sm:mb-6"
+            className="mb-4 sm:mb-6"
           >
-            <div className="w-12 h-12 sm:w-16 sm:h-16 bg-blue-100 rounded-full flex items-center justify-center">
-              <Code className="w-6 h-6 sm:w-8 sm:h-8 text-blue-600" />
-            </div>
-            <div className="text-center sm:text-left">
+            <div className="text-left">
               <h1 className="text-2xl sm:text-3xl md:text-4xl lg:text-5xl font-bold text-gray-900 mb-2 sm:mb-3">
                 Алгоритмизация
               </h1>
@@ -379,13 +459,24 @@ const ProgrammingBasics = ({ onPageChange }) => {
               Курс: Алгоритмизация
             </span>
             <span className="text-sm sm:text-base md:text-lg text-gray-500">
-              В процессе
+              {(() => {
+                const completedLessons = lessons.filter(l => l.completed).length;
+                const totalLessons = lessons.length;
+                const progress = Math.round((completedLessons / totalLessons) * 100);
+                return `${progress}% завершено`;
+              })()}
             </span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
             <div 
               className="bg-blue-600 h-2 sm:h-3 rounded-full transition-all duration-300"
-              style={{ width: '20%' }}
+              style={{ 
+                width: `${(() => {
+                  const completedLessons = lessons.filter(l => l.completed).length;
+                  const totalLessons = lessons.length;
+                  return Math.round((completedLessons / totalLessons) * 100);
+                })()}%` 
+              }}
             ></div>
           </div>
           <p className="text-xs sm:text-sm md:text-base text-gray-600 mt-3 sm:mt-4">

@@ -1,10 +1,14 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
 import { BookOpen, PlayCircle, Calendar, Clock, ArrowLeft, Lock, CheckCircle } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
+import { useAuth } from '../hooks/useAuth.jsx';
+import { getUserProgress, updateUserProgress, isLessonCompleted } from '../utils/auth.js';
+import BackButton from '../components/BackButton.jsx';
 
 const MyCourses = ({ onPageChange }) => {
   const { t } = useLanguage();
+  const { user } = useAuth();
   const [currentCourse, setCurrentCourse] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
   const [courses, setCourses] = useState([
@@ -21,38 +25,42 @@ const MyCourses = ({ onPageChange }) => {
         { id: 1, title: "Введение в программирование", completed: false, locked: false },
         { id: 2, title: "Переменные и типы данных", completed: false, locked: true }
       ]
-    },
-    {
-      id: 2,
-      title: "База данных",
-      description: "Освойте работу с базами данных и SQL",
-      progress: 0,
-      lessons: 2,
-      completed: 0,
-      duration: "2 недели",
-      color: "from-green-500 to-emerald-500",
-      lessonsData: [
-        { id: 1, title: "Основы SQL", completed: false, locked: false },
-        { id: 2, title: "Создание таблиц", completed: false, locked: true }
-      ]
-    },
-    {
-      id: 3,
-      title: "ИКТ",
-      description: "Информационно-коммуникационные технологии",
-      progress: 0,
-      lessons: 2,
-      completed: 0,
-      duration: "2 недели",
-      color: "from-purple-500 to-pink-500",
-      lessonsData: [
-        { id: 1, title: "Введение в ИКТ", completed: false, locked: false },
-        { id: 2, title: "Цифровые технологии", completed: false, locked: true }
-      ]
     }
   ]);
 
-  // Функция для обновления прогресса курса
+  // Обновляем прогресс курсов при загрузке
+  useEffect(() => {
+    if (user) {
+      updateCoursesProgress();
+    }
+  }, [user]);
+
+  const updateCoursesProgress = () => {
+    setCourses(prevCourses => 
+      prevCourses.map(course => {
+        const updatedLessonsData = course.lessonsData.map(lesson => {
+          const isCompleted = isLessonCompleted(user.id, course.id, lesson.id);
+          const isLocked = lesson.id > 1 && !isLessonCompleted(user.id, course.id, lesson.id - 1);
+          
+          return {
+            ...lesson,
+            completed: isCompleted,
+            locked: isLocked
+          };
+        });
+        
+        const completedLessons = updatedLessonsData.filter(lesson => lesson.completed).length;
+        const progress = (completedLessons / course.lessons) * 100;
+        
+        return {
+          ...course,
+          lessonsData: updatedLessonsData,
+          completed: completedLessons,
+          progress: Math.round(progress)
+        };
+      })
+    );
+  };
   const updateCourseProgress = (courseId) => {
     setCourses(prevCourses => 
       prevCourses.map(course => {
@@ -158,25 +166,12 @@ const MyCourses = ({ onPageChange }) => {
 
   return (
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7] min-h-screen">
+      {/* Back Button */}
+      <BackButton onClick={() => onPageChange && onPageChange('home')}>Назад к главной</BackButton>
+      
       {/* Hero Section */}
       <section className="pt-20 sm:pt-24 md:pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
         <div className="max-w-6xl mx-auto">
-          {/* Back Button */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6 }}
-            className="mb-6 sm:mb-8"
-          >
-            <motion.button
-              onClick={() => onPageChange && onPageChange('home')}
-              className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
-              whileHover={{ x: -4 }}
-            >
-              <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-              <span>Назад к главной</span>
-            </motion.button>
-          </motion.div>
 
           <motion.div
             initial={{ opacity: 0, y: 30 }}
@@ -378,21 +373,7 @@ const MyCourses = ({ onPageChange }) => {
         <section className="pt-20 sm:pt-24 md:pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
           <div className="max-w-4xl mx-auto">
             {/* Back Button */}
-            <motion.div
-              initial={{ opacity: 0, x: -20 }}
-              animate={{ opacity: 1, x: 0 }}
-              transition={{ duration: 0.6 }}
-              className="mb-6 sm:mb-8"
-            >
-              <motion.button
-                onClick={handleBackToLessons}
-                className="flex items-center gap-2 text-gray-600 hover:text-gray-900 transition-colors text-sm sm:text-base"
-                whileHover={{ x: -4 }}
-              >
-                <ArrowLeft className="w-4 h-4 sm:w-5 sm:h-5" />
-                <span>Назад к урокам</span>
-              </motion.button>
-            </motion.div>
+            <BackButton onClick={handleBackToLessons}>Назад к урокам</BackButton>
 
             {/* Lesson Content */}
             <motion.div

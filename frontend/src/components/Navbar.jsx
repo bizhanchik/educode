@@ -11,9 +11,11 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
   
   // Безопасное получение useAuth
   let isAuthenticated = false;
+  let user = null;
   try {
     const authContext = useAuth();
     isAuthenticated = authContext.isAuthenticated;
+    user = authContext.user;
   } catch (error) {
     console.warn('Navbar: useAuth not available', error);
   }
