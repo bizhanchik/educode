@@ -521,14 +521,12 @@ NameError: name 'undefined_var' is not defined`);
               lineHeight: '1.5',
               tabSize: 4
             }}
-<<<<<<< HEAD
-          />
-=======
+
         placeholder={`Введите ваш ${language === 'sql' ? 'SQL' : 'Python'} код здесь...`}
         disabled={isRunning}
             rows={code.split('\n').length}
       />
->>>>>>> 706454d (ready for implementation)
+
         </div>
       </div>
 
@@ -541,7 +539,6 @@ NameError: name 'undefined_var' is not defined`);
               error
               ? 'bg-[#0d1117] text-[#ff6666] border border-red-800'
               : 'bg-[#0d1117] text-[#d1d5db] border border-gray-700'
->>>>>>> 706454d (ready for implementation)
           }`}
           style={{ 
             minHeight: "120px", 
