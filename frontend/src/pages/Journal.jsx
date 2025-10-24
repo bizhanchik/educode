@@ -76,7 +76,6 @@ const Journal = ({ onPageChange }) => {
             </div>
           </div>
 
-<<<<<<< HEAD
           {/* Table */}
           <div className="bg-white overflow-hidden">
             <div className="overflow-x-auto">
@@ -200,9 +199,8 @@ const Journal = ({ onPageChange }) => {
               ))}
             </tbody>
           </table>
-            </div>
-          </div>
->>>>>>> 706454d (ready for implementation)
+        </div>
+      </div>
     </div>
   );
 };

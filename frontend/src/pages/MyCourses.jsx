@@ -15,24 +15,15 @@ const MyCourses = ({ onPageChange }) => {
   const [courses, setCourses] = useState([
     {
       id: 1,
-<<<<<<< HEAD
-      title: "Алгоритмизация",
-      description: "Изучите основы алгоритмов и структур данных",
-=======
       title: "ПМ02 - Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения",
       description: "",
->>>>>>> 706454d (ready for implementation)
       progress: 0,
       lessons: 2,
       completed: 0,
       duration: "2 недели",
       color: "from-blue-500 to-blue-600",
       lessonsData: [
-<<<<<<< HEAD
-        { id: 1, title: "Введение в программирование", completed: false, locked: false },
-=======
         { id: 1, title: "Введение в языки программирования...", completed: false, locked: false },
->>>>>>> 706454d (ready for implementation)
         { id: 2, title: "Переменные и типы данных", completed: false, locked: true }
       ]
     }
@@ -284,15 +275,10 @@ const MyCourses = ({ onPageChange }) => {
                   <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
                     {course.title}
                   </h3>
-<<<<<<< HEAD
-                  <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-3 sm:mb-4 leading-relaxed">
-                    {course.description}
-=======
                   
                   {/* Course Description */}
                   <p className="text-sm text-gray-600 mb-4 leading-relaxed">
                     
->>>>>>> 706454d (ready for implementation)
                   </p>
 
                   {/* Progress Bar */}
@@ -301,14 +287,6 @@ const MyCourses = ({ onPageChange }) => {
                       <span>Прогресс</span>
                       <span>{course.progress}%</span>
                     </div>
-<<<<<<< HEAD
-                    <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
-                      <motion.div
-                        initial={{ width: 0 }}
-                        animate={{ width: `${course.progress}%` }}
-                        transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
-                        className={`h-1.5 sm:h-2 rounded-full bg-gradient-to-r ${course.color}`}
-=======
                     <div className="w-full bg-gray-200 rounded-full h-2">
                       <motion.div 
                         key={`progress-${course.progress}-${animateProgress}`}
@@ -322,7 +300,6 @@ const MyCourses = ({ onPageChange }) => {
                         onAnimationComplete={() => {
                           console.log('Анимация прогресса курса завершена:', course.progress);
                         }}
->>>>>>> 706454d (ready for implementation)
                       />
                     </div>
                   </div>
@@ -344,11 +321,7 @@ const MyCourses = ({ onPageChange }) => {
                   {/* Action Button */}
                   <motion.button
                     onClick={() => handleCourseClick(course)}
-<<<<<<< HEAD
-                    className="w-full py-2 sm:py-2.5 md:py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors duration-200 text-xs sm:text-sm md:text-base"
-=======
                     className="w-full py-3 bg-blue-800 hover:bg-blue-900 text-white font-medium rounded-lg transition-colors duration-200 text-sm"
->>>>>>> 706454d (ready for implementation)
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >

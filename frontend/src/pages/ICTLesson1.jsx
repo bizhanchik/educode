@@ -455,11 +455,9 @@ print("- JavaScript (интерактивность)")`
               onCodeChange={handleCodeChange}
               onRunResult={handleRunCode}
             />
-<<<<<<< HEAD
-=======
-                  </div>
-                </div>
-              </div>
+          </div>
+        </div>
+      </div>
     );
   }
 
@@ -516,13 +514,8 @@ print("- JavaScript (интерактивность)")`
               
               {currentTask === tasks.length - 1 ? (
                 <motion.button
-<<<<<<< HEAD
                   onClick={handleSubmitResults}
                   className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
-=======
-            onClick={handleStartTasks}
-            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 text-lg flex items-center justify-center gap-2"
->>>>>>> 706454d (ready for implementation)
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

@@ -503,7 +503,6 @@ WHERE category = 'Электроника';`
                     <h2 className="text-2xl font-bold text-gray-900">Результаты практики (Базы данных)</h2>
                   </div>
 
-<<<<<<< HEAD
                   {/* Content */}
                   <div className="p-6">
                     {/* Summary */}
