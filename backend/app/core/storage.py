@@ -6,15 +6,34 @@ Wrapper for MinIO/S3 client for file storage operations.
 
 import logging
 import io
+import os
 from typing import Optional, BinaryIO
 from datetime import timedelta
 
 from minio import Minio
 from minio.error import S3Error
+from fastapi import UploadFile, HTTPException
 
 from app.core.config import settings
 
 logger = logging.getLogger(__name__)
+
+# File validation constants for lesson materials
+ALLOWED_MATERIAL_TYPES = {
+    # Documents
+    '.pdf', '.doc', '.docx', '.ppt', '.pptx', '.xls', '.xlsx', '.txt',
+    # Images
+    '.jpg', '.jpeg', '.png', '.gif', '.svg', '.webp',
+    # Videos
+    '.mp4', '.avi', '.mov', '.wmv', '.flv', '.mkv', '.webm',
+    # Archives
+    '.zip', '.rar', '.7z', '.tar', '.gz',
+    # Code files
+    '.py', '.js', '.java', '.cpp', '.c', '.html', '.css', '.json', '.xml'
+}
+
+MAX_MATERIAL_SIZE_MB = 50  # Maximum file size in megabytes
+MAX_MATERIAL_SIZE_BYTES = MAX_MATERIAL_SIZE_MB * 1024 * 1024
 
 
 class StorageClient:
@@ -289,6 +308,48 @@ class StorageClient:
         except S3Error as e:
             logger.error(f"Failed to get file info for {object_name}: {e}")
             raise
+
+
+def validate_material_file(file: UploadFile) -> None:
+    """
+    Validate uploaded lesson material file.
+
+    Checks file type and size according to allowed constraints.
+
+    Args:
+        file: The uploaded file to validate
+
+    Raises:
+        HTTPException: If file validation fails (400)
+    """
+    # Check file extension
+    file_ext = os.path.splitext(file.filename)[1].lower()
+    if file_ext not in ALLOWED_MATERIAL_TYPES:
+        allowed_types_str = ', '.join(sorted(ALLOWED_MATERIAL_TYPES))
+        raise HTTPException(
+            status_code=400,
+            detail=f"File type '{file_ext}' not allowed. Allowed types: {allowed_types_str}"
+        )
+
+    # Check file size
+    # Read file to check size (FastAPI UploadFile doesn't have size attribute)
+    file.file.seek(0, 2)  # Seek to end
+    file_size = file.file.tell()
+    file.file.seek(0)  # Reset to beginning
+
+    if file_size > MAX_MATERIAL_SIZE_BYTES:
+        raise HTTPException(
+            status_code=400,
+            detail=f"File size ({file_size / 1024 / 1024:.2f} MB) exceeds maximum allowed size ({MAX_MATERIAL_SIZE_MB} MB)"
+        )
+
+    if file_size == 0:
+        raise HTTPException(
+            status_code=400,
+            detail="File is empty"
+        )
+
+    logger.info(f"Validated file: {file.filename} ({file_size / 1024:.2f} KB)")
 
 
 # Global storage client instance

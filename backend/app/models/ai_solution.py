@@ -24,46 +24,18 @@ class AIProvider(str, Enum):
 
 
 class AISolution(Base):
-    """
-    AISolution model representing AI-generated reference solutions.
-    
-    For each task, the system generates 4 reference solutions:
-    - 3 from OpenAI (different approaches)
-    - 1 from Anthropic
-    
-    These solutions are used for similarity comparison with student submissions.
-    
-    Attributes:
-        id: Primary key
-        task_id: Foreign key to Task
-        provider: AI provider (openai/anthropic)
-        variant_index: Solution variant number (1-3 for OpenAI, 1 for Anthropic)
-        code: The AI-generated code solution
-        meta: JSON metadata (model, prompt, tokens, etc.)
-        created_at: Timestamp when solution was generated
-        updated_at: Timestamp when solution was last updated
-    """
     
     __tablename__ = "ai_solutions"
-    
-    # Primary key
     id = Column(Integer, primary_key=True, index=True)
-    
-    # Foreign key
     task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False, index=True)
-    
-    # AI solution information
     provider = Column(SQLEnum(AIProvider), nullable=False, index=True)
     variant_index = Column(Integer, nullable=False, index=True)
     code = Column(Text, nullable=False)
-    meta = Column(Text, nullable=True)  # JSON string for metadata
+    meta = Column(Text, nullable=True)
     
-    # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
     updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
     
-    # Relationships
-    # FIXED: Use lazy="selectin" to prevent greenlet errors when accessing relationships in async context
     task = relationship("Task", back_populates="ai_solutions", lazy="selectin")
     
     def __repr__(self) -> str:

@@ -178,50 +178,60 @@ async def get_task(
 ):
     """
     Get a specific task by ID.
-    
+
     - **task_id**: Task ID
     - **include_submissions**: Whether to include submissions in the response
     - **include_relations**: Whether to include lesson details
+
+    **Note**: Lesson materials are always included in the response to help students
+    understand lesson concepts before completing the task.
     """
     try:
-        query = select(Task)
-        
-        if include_submissions and include_relations:
-            query = query.options(
-                selectinload(Task.submissions),
-                selectinload(Task.lesson)
-            )
-        elif include_submissions:
+        # Always include lesson with materials
+        query = select(Task).options(
+            selectinload(Task.lesson).selectinload(Lesson.materials)
+        )
+
+        if include_submissions:
             query = query.options(selectinload(Task.submissions))
-        elif include_relations:
-            query = query.options(selectinload(Task.lesson))
-        
+
         query = query.where(Task.id == task_id)
         result = await db.execute(query)
         task = result.scalar_one_or_none()
-        
+
         if not task:
             raise HTTPException(
                 status_code=404,
                 detail="Task not found"
             )
-        
+
+        # Build response with lesson materials
         if include_submissions and include_relations:
-            return {
-                "data": TaskWithRelations.model_validate(task),
-                "status": "success"
-            }
+            task_data = TaskWithRelations.model_validate(task).model_dump()
         elif include_submissions:
-            return {
-                "data": TaskWithSubmissions.model_validate(task),
-                "status": "success"
-            }
+            task_data = TaskWithSubmissions.model_validate(task).model_dump()
         else:
-            return {
-                "data": TaskRead.model_validate(task),
-                "status": "success"
+            task_data = TaskRead.model_validate(task).model_dump()
+
+        # Always include lesson with materials in response
+        if task.lesson:
+            from app.schemas.lesson_material import LessonMaterialRead
+            lesson_data = {
+                "id": task.lesson.id,
+                "title": task.lesson.title,
+                "description": task.lesson.description,
+                "materials": [
+                    LessonMaterialRead.model_validate(material).model_dump()
+                    for material in task.lesson.materials
+                ]
             }
-    
+            task_data["lesson"] = lesson_data
+
+        return {
+            "data": task_data,
+            "status": "success"
+        }
+
     except HTTPException:
         raise
     except Exception as e:

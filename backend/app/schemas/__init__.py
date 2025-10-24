@@ -9,6 +9,7 @@ from app.schemas.user import UserBase, UserCreate, UserRead
 from app.schemas.group import GroupBase, GroupCreate, GroupRead
 from app.schemas.subject import SubjectBase, SubjectCreate, SubjectRead
 from app.schemas.lesson import LessonBase, LessonCreate, LessonRead
+from app.schemas.lesson_material import LessonMaterialBase, LessonMaterialCreate, LessonMaterialRead, MaterialType
 from app.schemas.task import TaskBase, TaskCreate, TaskRead
 from app.schemas.submission import SubmissionBase, SubmissionCreate, SubmissionRead
 from app.schemas.evaluation import EvaluationBase, EvaluationCreate, EvaluationRead
@@ -23,6 +24,8 @@ __all__ = [
     "SubjectBase", "SubjectCreate", "SubjectRead",
     # Lesson schemas
     "LessonBase", "LessonCreate", "LessonRead",
+    # Lesson Material schemas
+    "LessonMaterialBase", "LessonMaterialCreate", "LessonMaterialRead", "MaterialType",
     # Task schemas
     "TaskBase", "TaskCreate", "TaskRead",
     # Submission schemas

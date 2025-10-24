@@ -20,6 +20,7 @@ from app.routes.users import router as users_router
 from app.routes.groups import router as groups_router
 from app.routes.subjects import router as subjects_router
 from app.routes.lessons import router as lessons_router
+from app.routes.lesson_materials import router as lesson_materials_router
 from app.routes.tasks import router as tasks_router
 from app.routes.submissions import router as submissions_router
 from app.routes.evaluations import router as evaluations_router
@@ -92,6 +93,7 @@ app.include_router(users_router, prefix="/api/v1/users", tags=["users"])
 app.include_router(groups_router, prefix="/api/v1/groups", tags=["groups"])
 app.include_router(subjects_router, prefix="/api/v1/subjects", tags=["subjects"])
 app.include_router(lessons_router, prefix="/api/v1", tags=["lessons"])
+app.include_router(lesson_materials_router, tags=["lesson-materials"])
 app.include_router(tasks_router, prefix="/api/v1", tags=["tasks"])
 app.include_router(submissions_router, prefix="/api/v1", tags=["submissions"])
 app.include_router(evaluations_router, prefix="/api/v1", tags=["evaluations"])
