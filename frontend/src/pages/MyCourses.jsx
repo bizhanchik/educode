@@ -11,18 +11,28 @@ const MyCourses = ({ onPageChange }) => {
   const { user } = useAuth();
   const [currentCourse, setCurrentCourse] = useState(null);
   const [currentLesson, setCurrentLesson] = useState(null);
+  const [animateProgress, setAnimateProgress] = useState(false);
   const [courses, setCourses] = useState([
     {
       id: 1,
+<<<<<<< HEAD
       title: "Алгоритмизация",
       description: "Изучите основы алгоритмов и структур данных",
+=======
+      title: "ПМ02 - Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения",
+      description: "",
+>>>>>>> 706454d (ready for implementation)
       progress: 0,
       lessons: 2,
       completed: 0,
       duration: "2 недели",
       color: "from-blue-500 to-blue-600",
       lessonsData: [
+<<<<<<< HEAD
         { id: 1, title: "Введение в программирование", completed: false, locked: false },
+=======
+        { id: 1, title: "Введение в языки программирования...", completed: false, locked: false },
+>>>>>>> 706454d (ready for implementation)
         { id: 2, title: "Переменные и типы данных", completed: false, locked: true }
       ]
     }
@@ -164,6 +174,60 @@ const MyCourses = ({ onPageChange }) => {
     setCurrentLesson(null);
   };
 
+  // Функция для сброса прогресса (для демонстрации)
+  const resetProgress = () => {
+    localStorage.removeItem('lessonProgress');
+    localStorage.removeItem('courseProgress');
+    localStorage.removeItem('practiceSubmissions');
+    
+    // Сбрасываем состояние курсов
+    setCourses(prevCourses => 
+      prevCourses.map(course => ({
+        ...course,
+        progress: 0,
+        completed: 0,
+        lessonsData: course.lessonsData.map(lesson => ({
+          ...lesson,
+          completed: false,
+          locked: lesson.id > 1 // Только первый урок разблокирован
+        }))
+      }))
+    );
+    
+    setAnimateProgress(false);
+    alert('Прогресс сброшен на 0%! Теперь можно показать демонстрацию.');
+  };
+
+  // Загружаем прогресс курса и запускаем анимацию
+  useEffect(() => {
+    const savedCourseProgress = JSON.parse(localStorage.getItem('courseProgress') || '{"progress": 0}');
+    const savedLessonProgress = JSON.parse(localStorage.getItem('lessonProgress') || '[]');
+    
+    if (savedCourseProgress.progress > 0) {
+      // Обновляем прогресс курса
+      setCourses(prevCourses => 
+        prevCourses.map(course => {
+          if (course.id === 1) { // Обновляем только курс алгоритмизации
+            return {
+              ...course,
+              progress: savedCourseProgress.progress,
+              completed: savedLessonProgress.length
+            };
+          }
+          return course;
+        })
+      );
+      
+      // Запускаем анимацию прогресса
+      setAnimateProgress(true);
+      
+      // Сбрасываем флаг анимации через 2 секунды
+      setTimeout(() => {
+        setAnimateProgress(false);
+      }, 2000);
+    }
+  }, []);
+
   return (
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7] min-h-screen">
       {/* Back Button */}
@@ -185,6 +249,16 @@ const MyCourses = ({ onPageChange }) => {
             <p className="text-base sm:text-lg md:text-xl text-gray-600 max-w-3xl mx-auto leading-relaxed px-4">
               Изучайте назначенные вам курсы и развивайте свои навыки программирования
             </p>
+            
+            {/* Кнопка сброса прогресса для демонстрации */}
+            <motion.button
+              onClick={resetProgress}
+              className="mt-4 px-4 py-2 bg-red-600 hover:bg-red-700 text-white text-sm rounded-lg transition-colors"
+              whileHover={{ scale: 1.05 }}
+              whileTap={{ scale: 0.95 }}
+            >
+              🔄 Сбросить прогресс (для демонстрации)
+            </motion.button>
           </motion.div>
 
           {/* Courses Grid */}
@@ -210,8 +284,15 @@ const MyCourses = ({ onPageChange }) => {
                   <h3 className="text-base sm:text-lg md:text-xl font-bold text-gray-900 mb-2 sm:mb-3">
                     {course.title}
                   </h3>
+<<<<<<< HEAD
                   <p className="text-xs sm:text-sm md:text-base text-gray-600 mb-3 sm:mb-4 leading-relaxed">
                     {course.description}
+=======
+                  
+                  {/* Course Description */}
+                  <p className="text-sm text-gray-600 mb-4 leading-relaxed">
+                    
+>>>>>>> 706454d (ready for implementation)
                   </p>
 
                   {/* Progress Bar */}
@@ -220,12 +301,28 @@ const MyCourses = ({ onPageChange }) => {
                       <span>Прогресс</span>
                       <span>{course.progress}%</span>
                     </div>
+<<<<<<< HEAD
                     <div className="w-full bg-gray-200 rounded-full h-1.5 sm:h-2">
                       <motion.div
                         initial={{ width: 0 }}
                         animate={{ width: `${course.progress}%` }}
                         transition={{ duration: 1, delay: 0.5 + index * 0.1 }}
                         className={`h-1.5 sm:h-2 rounded-full bg-gradient-to-r ${course.color}`}
+=======
+                    <div className="w-full bg-gray-200 rounded-full h-2">
+                      <motion.div 
+                        key={`progress-${course.progress}-${animateProgress}`}
+                        className="bg-blue-600 h-2 rounded-full"
+                        initial={{ width: animateProgress ? 0 : `${course.progress}%` }}
+                        animate={{ width: `${course.progress}%` }}
+                        transition={{ 
+                          duration: animateProgress ? 1.5 : 0.3, 
+                          ease: "easeOut" 
+                        }}
+                        onAnimationComplete={() => {
+                          console.log('Анимация прогресса курса завершена:', course.progress);
+                        }}
+>>>>>>> 706454d (ready for implementation)
                       />
                     </div>
                   </div>
@@ -247,7 +344,11 @@ const MyCourses = ({ onPageChange }) => {
                   {/* Action Button */}
                   <motion.button
                     onClick={() => handleCourseClick(course)}
+<<<<<<< HEAD
                     className="w-full py-2 sm:py-2.5 md:py-3 bg-gray-900 hover:bg-gray-800 text-white font-medium rounded-lg transition-colors duration-200 text-xs sm:text-sm md:text-base"
+=======
+                    className="w-full py-3 bg-blue-800 hover:bg-blue-900 text-white font-medium rounded-lg transition-colors duration-200 text-sm"
+>>>>>>> 706454d (ready for implementation)
                     whileHover={{ scale: 1.02 }}
                     whileTap={{ scale: 0.98 }}
                   >
@@ -309,9 +410,6 @@ const MyCourses = ({ onPageChange }) => {
               <h1 className="text-2xl sm:text-3xl md:text-4xl font-bold text-gray-900 mb-3 sm:mb-4">
                 {currentCourse.title}
               </h1>
-              <p className="text-base sm:text-lg text-gray-600 max-w-2xl mx-auto px-4">
-                {currentCourse.description}
-              </p>
             </motion.div>
 
             {/* Lessons List */}

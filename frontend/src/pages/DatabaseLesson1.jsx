@@ -503,6 +503,7 @@ WHERE category = 'Электроника';`
                     <h2 className="text-2xl font-bold text-gray-900">Результаты практики (Базы данных)</h2>
                   </div>
 
+<<<<<<< HEAD
                   {/* Content */}
                   <div className="p-6">
                     {/* Summary */}
@@ -532,6 +533,37 @@ WHERE category = 'Электроника';`
                             {Math.round((tasks.reduce((s, t) => s + t.gainedPoints, 0) / tasks.reduce((s, t) => s + t.maxPoints, 0)) * 100)}%
                           </div>
                           <div className="text-sm text-gray-600">Процент</div>
+=======
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <BackButton onClick={() => onPageChange('database-basics')}>
+        Назад к урокам
+      </BackButton>
+      
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+            Урок 1: Основы SQL
+          </h1>
+
+          <div className="mb-8">
+            <p className="text-lg text-gray-600 mb-6">
+              Изучите основы языка SQL для работы с базами данных.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-900 mb-2">Тестирование</h3>
+                <p className="text-green-800 text-sm">
+                  SQL - это язык структурированных запросов для работы с реляционными базами данных.
+                </p>
+                          </div>
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Решение задач</h3>
+                <p className="text-blue-800 text-sm">
+                  Выполните практические задания для закрепления материала.
+                </p>
+>>>>>>> 706454d (ready for implementation)
                         </div>
                       </div>
                     </div>

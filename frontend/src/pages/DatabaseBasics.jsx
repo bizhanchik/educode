@@ -251,7 +251,7 @@ const DatabaseBasics = ({ onPageChange }) => {
                       <div className="flex items-center gap-2 sm:gap-4">
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
                           <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="hidden sm:inline">Теория</span>
+                          <span className="hidden sm:inline">Тестирование</span>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
                           <Code className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -304,7 +304,7 @@ const DatabaseBasics = ({ onPageChange }) => {
               <div className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
                   <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-green-600" />
-                  Теория
+                  Тестирование
                 </h2>
                 <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed">

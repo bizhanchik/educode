@@ -455,6 +455,47 @@ print("- JavaScript (интерактивность)")`
               onCodeChange={handleCodeChange}
               onRunResult={handleRunCode}
             />
+<<<<<<< HEAD
+=======
+                  </div>
+                </div>
+              </div>
+    );
+  }
+
+  return (
+    <div className="min-h-screen bg-gray-50">
+      <BackButton onClick={() => onPageChange('ict-basics')}>
+        Назад к урокам
+      </BackButton>
+      
+      <div className="max-w-4xl mx-auto px-6 py-8">
+        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
+          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
+            Урок 1: Введение в ИКТ
+          </h1>
+
+          <div className="mb-8">
+            <p className="text-lg text-gray-600 mb-6">
+              Изучите основы информационно-коммуникационных технологий и их применение.
+            </p>
+
+            <div className="grid md:grid-cols-2 gap-6 mb-8">
+              <div className="bg-blue-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-blue-900 mb-2">Тестирование</h3>
+                <p className="text-blue-800 text-sm">
+                  ИКТ - это технологии, которые обеспечивают создание, передачу, обработку и использование информации.
+                </p>
+              </div>
+              <div className="bg-green-50 p-4 rounded-lg">
+                <h3 className="font-semibold text-green-900 mb-2">Решение задач</h3>
+                <p className="text-green-800 text-sm">
+                  Выполните практические задания для закрепления материала.
+                </p>
+              </div>
+            </div>
+              </div>
+>>>>>>> 706454d (ready for implementation)
 
             {/* Navigation Buttons */}
             <div className="flex flex-col sm:flex-row gap-3 sm:gap-4">
@@ -475,8 +516,13 @@ print("- JavaScript (интерактивность)")`
               
               {currentTask === tasks.length - 1 ? (
                 <motion.button
+<<<<<<< HEAD
                   onClick={handleSubmitResults}
                   className="flex-1 px-6 py-3 bg-green-600 hover:bg-green-700 text-white font-medium rounded-lg transition-colors duration-200 flex items-center justify-center gap-2"
+=======
+            onClick={handleStartTasks}
+            className="w-full px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200 text-lg flex items-center justify-center gap-2"
+>>>>>>> 706454d (ready for implementation)
                   whileHover={{ scale: 1.02 }}
                   whileTap={{ scale: 0.98 }}
                 >

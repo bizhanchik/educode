@@ -233,10 +233,10 @@ const GraphicsBasics = ({ onPageChange }) => {
                   <div className="flex items-center gap-3 sm:gap-6 flex-1 min-w-0">
                     <div className={`w-12 h-12 sm:w-16 sm:h-16 rounded-xl flex items-center justify-center flex-shrink-0 ${
                       lesson.completed 
-                        ? 'bg-purple-100 text-purple-600' 
+                        ? 'bg-blue-100 text-blue-600' 
                         : lesson.locked 
                           ? 'bg-gray-100 text-gray-400' 
-                          : 'bg-purple-100 text-purple-600'
+                          : 'bg-blue-100 text-blue-600'
                     }`}>
                       {lesson.completed ? (
                         <CheckCircle className="w-6 h-6 sm:w-8 sm:h-8" />
@@ -256,7 +256,7 @@ const GraphicsBasics = ({ onPageChange }) => {
                       <div className="flex items-center gap-2 sm:gap-4">
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
                           <FileText className="w-3 h-3 sm:w-4 sm:h-4" />
-                          <span className="hidden sm:inline">Теория</span>
+                          <span className="hidden sm:inline">Тестирование</span>
                         </div>
                         <div className="flex items-center gap-1 sm:gap-2 text-xs sm:text-sm text-gray-500">
                           <Code className="w-3 h-3 sm:w-4 sm:h-4" />
@@ -268,10 +268,10 @@ const GraphicsBasics = ({ onPageChange }) => {
                   <div className="text-right hidden sm:block flex-shrink-0 ml-4">
                     <div className={`text-sm sm:text-base md:text-lg font-medium ${
                       lesson.completed 
-                        ? 'text-purple-600' 
+                        ? 'text-blue-600' 
                         : lesson.locked 
                           ? 'text-gray-400' 
-                          : 'text-purple-600'
+                          : 'text-blue-600'
                     }`}>
                       {lesson.completed ? 'Завершен' : lesson.locked ? 'Заблокирован' : 'Доступен'}
                     </div>
@@ -308,8 +308,8 @@ const GraphicsBasics = ({ onPageChange }) => {
               {/* Theory Section */}
               <div className="mb-6 sm:mb-8">
                 <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-purple-600" />
-                  Теория
+                  <FileText className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  Тестирование
                 </h2>
                 <div className="bg-gray-50 rounded-lg p-4 sm:p-6">
                   <p className="text-sm sm:text-base text-gray-700 leading-relaxed">
@@ -319,6 +319,7 @@ const GraphicsBasics = ({ onPageChange }) => {
               </div>
 
               {/* Practice Section */}
+<<<<<<< HEAD
               {!showTasks ? (
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
@@ -338,6 +339,24 @@ const GraphicsBasics = ({ onPageChange }) => {
                       Начать задания
                     </motion.button>
                   </div>
+=======
+              <div className="mb-6 sm:mb-8">
+                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
+                  <PlayCircle className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
+                  Практическое задание
+                </h2>
+                <div className="bg-blue-50 rounded-lg p-4 sm:p-6">
+                  <p className="text-sm sm:text-base text-gray-700 mb-4">
+                    {currentLesson.task}
+                  </p>
+                  <motion.button
+                    className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-200 text-sm sm:text-base"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Начать практику
+                  </motion.button>
+>>>>>>> 706454d (ready for implementation)
                 </div>
               ) : (
                 <>

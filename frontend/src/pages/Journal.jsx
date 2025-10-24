@@ -76,6 +76,7 @@ const Journal = ({ onPageChange }) => {
             </div>
           </div>
 
+<<<<<<< HEAD
           {/* Table */}
           <div className="bg-white overflow-hidden">
             <div className="overflow-x-auto">
@@ -160,6 +161,48 @@ const Journal = ({ onPageChange }) => {
           </div>
         </div>
       </section>
+=======
+        {/* Фильтр */}
+        <div className="mb-6">
+          <button className="px-6 py-3 bg-blue-600 text-white rounded-lg flex items-center gap-2 hover:bg-blue-700 transition-colors">
+            <Filter className="w-4 h-4" />
+            Фильтр
+          </button>
+            </div>
+
+        {/* Таблица */}
+        <div className="bg-white border border-gray-200 overflow-hidden">
+          <table className="w-full">
+            <thead className="bg-gray-50">
+              <tr>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Тип</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Группа</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Вид оценки</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Часы</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Преподаватель</th>
+                <th className="px-6 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider">Предмет</th>
+              </tr>
+            </thead>
+            <tbody className="bg-white divide-y divide-gray-200">
+              {courses.map((course) => (
+                <tr
+                  key={course.id}
+                  onClick={() => handleRowClick(course.id)}
+                  className="cursor-pointer hover:bg-gray-50 transition-colors"
+                >
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.type}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.group}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.gradeType}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.hours}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.teacher}</td>
+                  <td className="px-6 py-4 whitespace-nowrap text-sm text-gray-900">{course.subject}</td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+            </div>
+          </div>
+>>>>>>> 706454d (ready for implementation)
     </div>
   );
 };

@@ -295,9 +295,75 @@ sys.stdout = StringIO()
                 }
               }
             }
+<<<<<<< HEAD
             
             // Обрабатываем print() функции
             const printMatches = code.match(/print\s*\(\s*([^)]+)\s*\)/g);
+=======
+            return;
+          }
+          
+          // Проверка на отступы
+          if (code.includes('    ') && !code.match(/^[ ]{4}/m)) {
+            setError(`Traceback (most recent call last):
+  File "<stdin>", line 2
+    print("hello")
+    ^
+IndentationError: expected an indented block`);
+            updateTaskStatus(currentTask, 'error');
+            if (onRunResult) {
+              onRunResult(false, 'IndentationError: expected an indented block');
+            }
+            return;
+          }
+          
+          // Проверка на незакрытые скобки
+          const openParens = (code.match(/\(/g) || []).length;
+          const closeParens = (code.match(/\)/g) || []).length;
+          if (openParens !== closeParens) {
+            setError(`Traceback (most recent call last):
+  File "<stdin>", line 1
+    ${code.trim()}
+    ^
+SyntaxError: unexpected EOF while parsing`);
+            updateTaskStatus(currentTask, 'error');
+            if (onRunResult) {
+              onRunResult(false, 'SyntaxError: unexpected EOF while parsing');
+            }
+            return;
+          }
+          
+          // Проверка на деление на ноль
+          if (code.includes('/ 0') || code.includes('/0')) {
+            setError(`Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+ZeroDivisionError: division by zero`);
+            updateTaskStatus(currentTask, 'error');
+          if (onRunResult) {
+              onRunResult(false, 'ZeroDivisionError: division by zero');
+            }
+            return;
+          }
+          
+          // Проверка на неопределенные переменные
+          if (code.includes('undefined_var') || code.includes('x = y + z') && !code.includes('y =') && !code.includes('z =')) {
+            setError(`Traceback (most recent call last):
+  File "<stdin>", line 1, in <module>
+NameError: name 'undefined_var' is not defined`);
+            updateTaskStatus(currentTask, 'error');
+            if (onRunResult) {
+              onRunResult(false, "NameError: name 'undefined_var' is not defined");
+          }
+          return;
+        }
+
+          // Если все проверки пройдены, симулируем успешное выполнение
+          let simulatedOutput = '';
+          
+          if (code.includes('print')) {
+            // Извлекаем содержимое print() и симулируем вывод
+            const printMatches = code.match(/print\s*\(\s*["']?([^"']*)["']?\s*\)/g);
+>>>>>>> 706454d (ready for implementation)
             if (printMatches) {
               printMatches.forEach(match => {
                 const content = match.match(/print\s*\(\s*([^)]+)\s*\)/);
@@ -353,6 +419,21 @@ sys.stdout = StringIO()
         if (onRunResult) {
               onRunResult(false, syntaxError.message);
             }
+          } else if (code.includes('Hello') || code.includes('hello')) {
+            simulatedOutput = 'Hello, World!\n';
+          } else if (code.includes('Привет')) {
+            simulatedOutput = 'Привет, Ваше имя!\n';
+          } else if (code.includes('+') && code.includes('=')) {
+            simulatedOutput = 'Сумма: 15\n';
+          } else {
+            simulatedOutput = 'Код выполнен успешно!\n';
+          }
+          
+          setOutput(simulatedOutput);
+          updateTaskStatus(currentTask, 'completed');
+        if (onRunResult) {
+            onRunResult(true, simulatedOutput);
+
           }
         }
       }
@@ -374,7 +455,11 @@ sys.stdout = StringIO()
       {/* Заголовок с кнопкой запуска */}
       <div className="flex justify-between items-center mb-2">
         <div className="flex items-center gap-2">
-          <h3 className="font-semibold text-gray-800">Python код:</h3>
+
+        <h3 className="text-sm font-medium text-gray-700">
+          {language === 'sql' ? 'SQL код:' : 'Python код:'}
+        </h3>
+
           {isUserEditing && (
             <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
               Редактируется
@@ -415,8 +500,13 @@ sys.stdout = StringIO()
               </div>
             ))}
           </div>
+<<<<<<< HEAD
         
           {/* Область ввода кода */}
+=======
+          
+          {/* Поле ввода кода */}
+>>>>>>> 706454d (ready for implementation)
       <textarea
         value={code}
             onChange={handleCodeChange}
@@ -431,16 +521,27 @@ sys.stdout = StringIO()
               lineHeight: '1.5',
               tabSize: 4
             }}
+<<<<<<< HEAD
           />
+=======
+        placeholder={`Введите ваш ${language === 'sql' ? 'SQL' : 'Python'} код здесь...`}
+        disabled={isRunning}
+            rows={code.split('\n').length}
+      />
+>>>>>>> 706454d (ready for implementation)
         </div>
       </div>
 
       {/* Терминал с выводом */}
         <div className="mt-4">
-        <h4 className="text-sm font-semibold mb-2 text-gray-700">Вывод программы:</h4>
-        <div
-          className={`rounded-lg p-4 font-mono text-sm overflow-auto transition-all border ${
-            error ? "bg-[#0d1117] text-[#ff6666] border-red-800" : "bg-[#0d1117] text-[#d1d5db] border-gray-700"
+
+          <h4 className="text-sm font-medium text-gray-700 mb-2">Вывод программы:</h4>
+          <div
+            className={`p-4 rounded-lg text-sm font-mono overflow-auto transition-all duration-200 ${
+              error
+              ? 'bg-[#0d1117] text-[#ff6666] border border-red-800'
+              : 'bg-[#0d1117] text-[#d1d5db] border border-gray-700'
+>>>>>>> 706454d (ready for implementation)
           }`}
           style={{ 
             minHeight: "120px", 
@@ -452,15 +553,17 @@ sys.stdout = StringIO()
           }}
           >
             {error ? (
-            <>
-              Traceback (most recent call last):<br/>
-              {error}
-            </>
-          ) : (
-            <>
-              {output || "← Нажмите 'Запустить', чтобы увидеть вывод"}
+
+            <div className="text-[#ff6666]">
+              <div className="font-semibold mb-2">Traceback (most recent call last):</div>
+                <div className="whitespace-pre-wrap">{error}</div>
+              </div>
+            ) : (
+            <div className="text-[#d1d5db] whitespace-pre-wrap">
+                {output || '← Нажмите "Запустить" для выполнения кода'}
               {output && <span className="animate-pulse text-white">▮</span>}
-            </>
+              </div>
+
             )}
           </div>
         </div>
