@@ -483,150 +483,119 @@ WHERE category = 'Электроника';`
                 </motion.button>
               )}
             </div>
+          </motion.div>
+        )}
 
-            {/* Results Modal */}
-            {showResults && (
-              <motion.div
-                initial={{ opacity: 0, y: 20 }}
-                animate={{ opacity: 1, y: 0 }}
-                transition={{ duration: 0.5 }}
-                className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
-              >
-                <motion.div
-                  initial={{ opacity: 0, scale: 0.9 }}
-                  animate={{ opacity: 1, scale: 1 }}
-                  transition={{ duration: 0.3 }}
-                  className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
-                >
-                  {/* Header */}
-                  <div className="p-6 border-b border-gray-200">
-                    <h2 className="text-2xl font-bold text-gray-900">Результаты практики (Базы данных)</h2>
-                  </div>
+        {/* Results Modal */}
+        {showResults && (
+          <motion.div
+            initial={{ opacity: 0, y: 20 }}
+            animate={{ opacity: 1, y: 0 }}
+            transition={{ duration: 0.5 }}
+            className="fixed inset-0 bg-black bg-opacity-50 flex items-center justify-center z-50 p-4"
+          >
+            <motion.div
+              initial={{ opacity: 0, scale: 0.9 }}
+              animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3 }}
+              className="bg-white rounded-xl shadow-xl max-w-4xl w-full max-h-[90vh] overflow-y-auto"
+            >
+              {/* Header */}
+              <div className="p-6 border-b border-gray-200">
+                <h2 className="text-2xl font-bold text-gray-900">Результаты практики (Базы данных)</h2>
+              </div>
 
-                  {/* Content */}
-                  <div className="p-6">
-                    {/* Summary */}
-                    <div className="bg-gray-50 rounded-lg p-6 mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Итоги</h3>
-                      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-green-600">
-                            {tasks.filter(t => t.status === 'passed').length}
-                          </div>
-                          <div className="text-sm text-gray-600">Правильно</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-red-600">
-                            {tasks.filter(t => t.status === 'failed').length}
-                          </div>
-                          <div className="text-sm text-gray-600">Неправильно</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-blue-600">
-                            {tasks.reduce((s, t) => s + t.gainedPoints, 0)} / {tasks.reduce((s, t) => s + t.maxPoints, 0)}
-                          </div>
-                          <div className="text-sm text-gray-600">Баллы</div>
-                        </div>
-                        <div className="text-center">
-                          <div className="text-2xl font-bold text-purple-600">
-                            {Math.round((tasks.reduce((s, t) => s + t.gainedPoints, 0) / tasks.reduce((s, t) => s + t.maxPoints, 0)) * 100)}%
-                          </div>
-                          <div className="text-sm text-gray-600">Процент</div>
-=======
-  return (
-    <div className="min-h-screen bg-gray-50">
-      <BackButton onClick={() => onPageChange('database-basics')}>
-        Назад к урокам
-      </BackButton>
-      
-      <div className="max-w-4xl mx-auto px-6 py-8">
-        <div className="bg-white rounded-xl shadow-lg p-6 sm:p-8">
-          <h1 className="text-3xl sm:text-4xl font-bold text-gray-900 mb-6">
-            Урок 1: Основы SQL
-          </h1>
-
-          <div className="mb-8">
-            <p className="text-lg text-gray-600 mb-6">
-              Изучите основы языка SQL для работы с базами данных.
-            </p>
-
-            <div className="grid md:grid-cols-2 gap-6 mb-8">
-              <div className="bg-green-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-green-900 mb-2">Тестирование</h3>
-                <p className="text-green-800 text-sm">
-                  SQL - это язык структурированных запросов для работы с реляционными базами данных.
-                </p>
-                          </div>
-              <div className="bg-blue-50 p-4 rounded-lg">
-                <h3 className="font-semibold text-blue-900 mb-2">Решение задач</h3>
-                <p className="text-blue-800 text-sm">
-                  Выполните практические задания для закрепления материала.
-                </p>
->>>>>>> 706454d (ready for implementation)
-                        </div>
+              {/* Content */}
+              <div className="p-6">
+                {/* Summary */}
+                <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Итоги</h3>
+                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-green-600">
+                        {tasks.filter(t => t.status === 'passed').length}
                       </div>
+                      <div className="text-sm text-gray-600">Правильно</div>
                     </div>
-
-                    {/* Tasks Details */}
-                    <div className="mb-6">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-4">Детали заданий</h3>
-                      <div className="space-y-3">
-                        {tasks.map((task, index) => (
-                          <div key={task.id} className="border border-gray-200 rounded-lg p-4">
-                            <div className="flex justify-between items-center mb-2">
-                              <h4 className="font-medium text-gray-900">{task.title}</h4>
-                              <div className={`px-3 py-1 rounded-full text-sm font-medium ${
-                                task.status === 'passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
-                              }`}>
-                                {task.status === 'passed' ? '✓ Выполнено' : '✗ Ошибка'}
-                              </div>
-                            </div>
-                            <div className="text-sm text-gray-600 mb-2">
-                              Баллы: {task.gainedPoints} / {task.maxPoints}
-                            </div>
-                            {task.status === 'failed' && task.errorExplanation && (
-                              <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
-                                <strong>Где ошибка:</strong> {task.errorExplanation}
-                              </div>
-                            )}
-                          </div>
-                        ))}
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-red-600">
+                        {tasks.filter(t => t.status === 'failed').length}
                       </div>
+                      <div className="text-sm text-gray-600">Неправильно</div>
                     </div>
-
-                    {/* Info Message */}
-                    <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
-                      <p className="text-blue-800">
-                        Ваши баллы будут добавлены в журнал в течение нескольких минут.
-                      </p>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-blue-600">
+                        {tasks.reduce((s, t) => s + t.gainedPoints, 0)} / {tasks.reduce((s, t) => s + t.maxPoints, 0)}
+                      </div>
+                      <div className="text-sm text-gray-600">Баллы</div>
                     </div>
-
-                    {/* Actions */}
-                    <div className="flex flex-col sm:flex-row gap-3 justify-end">
-                      <motion.button
-                        onClick={() => setShowResults(false)}
-                        className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Закрыть
-                      </motion.button>
-                      <motion.button
-                        onClick={() => {
-                          setShowResults(false);
-                          onPageChange && onPageChange('journal');
-                        }}
-                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
-                        whileHover={{ scale: 1.02 }}
-                        whileTap={{ scale: 0.98 }}
-                      >
-                        Перейти в журнал
-                      </motion.button>
+                    <div className="text-center">
+                      <div className="text-2xl font-bold text-purple-600">
+                        {Math.round((tasks.reduce((s, t) => s + t.gainedPoints, 0) / tasks.reduce((s, t) => s + t.maxPoints, 0)) * 100)}%
+                      </div>
+                      <div className="text-sm text-gray-600">Процент</div>
                     </div>
                   </div>
-                </motion.div>
-              </motion.div>
-            )}
+                </div>
+
+                {/* Tasks Details */}
+                <div className="mb-6">
+                  <h3 className="text-lg font-semibold text-gray-900 mb-4">Детали заданий</h3>
+                  <div className="space-y-3">
+                    {tasks.map((task, index) => (
+                      <div key={task.id} className="border border-gray-200 rounded-lg p-4">
+                        <div className="flex justify-between items-center mb-2">
+                          <h4 className="font-medium text-gray-900">{task.title}</h4>
+                          <div className={`px-3 py-1 rounded-full text-sm font-medium ${
+                            task.status === 'passed' ? 'bg-green-100 text-green-800' : 'bg-red-100 text-red-800'
+                          }`}>
+                            {task.status === 'passed' ? '✓ Выполнено' : '✗ Ошибка'}
+                          </div>
+                        </div>
+                        <div className="text-sm text-gray-600 mb-2">
+                          Баллы: {task.gainedPoints} / {task.maxPoints}
+                        </div>
+                        {task.status === 'failed' && task.errorExplanation && (
+                          <div className="text-sm text-red-600 bg-red-50 p-2 rounded">
+                            <strong>Где ошибка:</strong> {task.errorExplanation}
+                          </div>
+                        )}
+                      </div>
+                    ))}
+                  </div>
+                </div>
+
+                {/* Info Message */}
+                <div className="bg-blue-50 border border-blue-200 rounded-lg p-4 mb-6">
+                  <p className="text-blue-800">
+                    Ваши баллы будут добавлены в журнал в течение нескольких минут.
+                  </p>
+                </div>
+
+                {/* Actions */}
+                <div className="flex flex-col sm:flex-row gap-3 justify-end">
+                  <motion.button
+                    onClick={() => setShowResults(false)}
+                    className="px-6 py-3 bg-gray-600 hover:bg-gray-700 text-white font-medium rounded-lg transition-colors duration-200"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Закрыть
+                  </motion.button>
+                  <motion.button
+                    onClick={() => {
+                      setShowResults(false);
+                      onPageChange && onPageChange('journal');
+                    }}
+                    className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors duration-200"
+                    whileHover={{ scale: 1.02 }}
+                    whileTap={{ scale: 0.98 }}
+                  >
+                    Перейти в журнал
+                  </motion.button>
+                </div>
+              </div>
+            </motion.div>
           </motion.div>
         )}
       </motion.div>

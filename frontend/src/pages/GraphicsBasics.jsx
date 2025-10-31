@@ -319,7 +319,6 @@ const GraphicsBasics = ({ onPageChange }) => {
               </div>
 
               {/* Practice Section */}
-<<<<<<< HEAD
               {!showTasks ? (
                 <div className="mb-6 sm:mb-8">
                   <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
@@ -339,24 +338,6 @@ const GraphicsBasics = ({ onPageChange }) => {
                       Начать задания
                     </motion.button>
                   </div>
-=======
-              <div className="mb-6 sm:mb-8">
-                <h2 className="text-xl sm:text-2xl font-bold text-gray-900 mb-3 sm:mb-4 flex items-center gap-2">
-                  <PlayCircle className="w-5 h-5 sm:w-6 sm:h-6 text-blue-600" />
-                  Практическое задание
-                </h2>
-                <div className="bg-blue-50 rounded-lg p-4 sm:p-6">
-                  <p className="text-sm sm:text-base text-gray-700 mb-4">
-                    {currentLesson.task}
-                  </p>
-                  <motion.button
-                    className="px-4 sm:px-6 py-2 sm:py-3 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors duration-200 text-sm sm:text-base"
-                    whileHover={{ scale: 1.02 }}
-                    whileTap={{ scale: 0.98 }}
-                  >
-                    Начать практику
-                  </motion.button>
->>>>>>> 706454d (ready for implementation)
                 </div>
               ) : (
                 <>

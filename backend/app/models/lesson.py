@@ -54,6 +54,7 @@ class Lesson(Base):
     teacher = relationship("User", back_populates="lessons", foreign_keys=[teacher_id], lazy="selectin")
     tasks = relationship("Task", back_populates="lesson", cascade="all, delete-orphan", lazy="selectin")
     materials = relationship("LessonMaterial", back_populates="lesson", cascade="all, delete-orphan", lazy="selectin")
+    quizzes = relationship("Quiz", back_populates="lesson", cascade="all, delete-orphan", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<Lesson(id={self.id}, title='{self.title}', subject_id={self.subject_id})>"

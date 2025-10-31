@@ -1,569 +1,370 @@
-import React, { useState, useEffect } from 'react';
-import { Play, Loader2 } from 'lucide-react';
+import React, { useState, useEffect, useRef } from 'react';
+import { motion } from 'framer-motion';
+import { Play, CheckCircle, XCircle, AlertCircle, Copy, Download } from 'lucide-react';
 
-const CodeRunner = ({ initialCode, onCodeChange, onRunResult, language = 'python' }) => {
-  const [code, setCode] = useState(initialCode || '');
+const CodeRunner = ({ 
+  task, 
+  onTaskComplete, 
+  onFinish, 
+  forceUpdateCodeRef,
+  initialCode = '',
+  onCodeChange,
+  onRunResult
+}) => {
+  const [code, setCode] = useState(initialCode || task?.starterCode || '');
   const [output, setOutput] = useState('');
   const [error, setError] = useState('');
   const [isRunning, setIsRunning] = useState(false);
-  const [pyodide, setPyodide] = useState(null);
-  const [isUserEditing, setIsUserEditing] = useState(false);
-  const [lastInitialCode, setLastInitialCode] = useState(initialCode);
-  const [editingTimeout, setEditingTimeout] = useState(null);
+  const [taskStatus, setTaskStatus] = useState('pending');
+  const [currentTask, setCurrentTask] = useState(0);
+  const [tasks, setTasks] = useState(task ? [task] : []);
+  const [variables, setVariables] = useState({});
+  const [showOutput, setShowOutput] = useState(false);
 
-  // Загружаем Pyodide при монтировании компонента
+  const textareaRef = useRef(null);
+
   useEffect(() => {
-    async function loadPyodide() {
-      try {
-        // Проверяем, есть ли уже загруженный Pyodide
-        if (window.pyodide) {
-          setPyodide(window.pyodide);
-          return;
-        }
-
-        // Загружаем Pyodide
-        const py = await window.loadPyodide({
-          indexURL: "https://cdn.jsdelivr.net/pyodide/v0.24.1/full/",
-        });
-        
-        window.pyodide = py;
-        setPyodide(py);
-      } catch (err) {
-        console.error('Ошибка загрузки Pyodide:', err);
-        // Fallback на улучшенную симуляцию
-        setPyodide('fallback');
-      }
-    }
-    
-    loadPyodide();
-  }, []);
-
-  // Очищаем таймер при размонтировании
-  useEffect(() => {
-    return () => {
-      if (editingTimeout) {
-        clearTimeout(editingTimeout);
-      }
-    };
-  }, [editingTimeout]);
-
-  // Обновляем код при изменении initialCode только если пользователь не редактирует
-  useEffect(() => {
-    if (initialCode !== undefined && initialCode !== lastInitialCode) {
-      // Проверяем, что пользователь не редактирует код активно
-      if (!isUserEditing) {
-      setCode(initialCode);
-        setLastInitialCode(initialCode);
-        // Очищаем терминал при смене задания
+    if (forceUpdateCodeRef) {
+      forceUpdateCodeRef.current = () => {
+        setCode(task?.starterCode || '');
         setOutput('');
         setError('');
-      }
+        setTaskStatus('pending');
+      };
     }
-  }, [initialCode, lastInitialCode, isUserEditing]);
+  }, [forceUpdateCodeRef, task]);
 
-  // Дополнительная защита - не обновляем код если пользователь активно печатает
   useEffect(() => {
-    if (isUserEditing) {
-      // Если пользователь редактирует, не обновляем код даже при изменении initialCode
-      return;
+    if (task) {
+      setCode(task.starterCode || '');
+      setOutput('');
+      setError('');
+      setTaskStatus('pending');
+      setShowOutput(false);
     }
-  }, [isUserEditing]);
+  }, [task]);
 
-  // Функция для принудительного обновления кода (вызывается извне)
-  const forceUpdateCode = (newCode) => {
-    // Дополнительная проверка - не обновляем если пользователь активно редактирует
-    if (isUserEditing) {
-      console.log('Код не обновлен - пользователь активно редактирует');
-      return;
-    }
-    
-    setCode(newCode);
-    setLastInitialCode(newCode);
-    setOutput('');
-    setError('');
-    setIsUserEditing(false);
-  };
-
-  // Экспортируем функцию для внешнего использования
   useEffect(() => {
     if (onCodeChange) {
-      onCodeChange(code, forceUpdateCode);
+      onCodeChange(code);
     }
   }, [code, onCodeChange]);
 
-  // Обработчики для отслеживания редактирования пользователем
-  const handleCodeChange = (e) => {
-    setIsUserEditing(true);
-    setCode(e.target.value);
-    
-    // Очищаем предыдущий таймер
-    if (editingTimeout) {
-      clearTimeout(editingTimeout);
+  const updateTaskStatus = (taskIndex, status) => {
+    setTaskStatus(status);
+    if (onTaskComplete) {
+      onTaskComplete({
+        taskId: task.id,
+        status: status,
+        code: code,
+        output: output,
+        error: error
+      });
     }
-    
-    // Устанавливаем новый таймер для сброса флага редактирования
-    const timeout = setTimeout(() => {
-      setIsUserEditing(false);
-    }, 5000); // 5 секунд без активности
-    
-    setEditingTimeout(timeout);
   };
 
-  const handleCodeFocus = () => {
-    setIsUserEditing(true);
-  };
-
-  const handleCodeBlur = () => {
-    // Небольшая задержка перед сбросом флага редактирования
-    setTimeout(() => {
-      setIsUserEditing(false);
-    }, 3000); // 3 секунды после потери фокуса
-  };
-
-  // Функция выполнения кода
   const runCode = async () => {
+    if (!code.trim()) {
+      setError('Код не может быть пустым');
+      return;
+    }
+
     setIsRunning(true);
-    setOutput('');
     setError('');
+    setOutput('');
+    setShowOutput(true);
 
     try {
-      if (language === 'sql') {
-        // Для SQL кода делаем симуляцию выполнения
-        await new Promise(resolve => setTimeout(resolve, 1000));
+      // Простая симуляция выполнения Python кода
+      let result = '';
+      let hasError = false;
+
+      // Проверка на синтаксические ошибки
+      if (code.includes('print(') && !code.includes(')')) {
+        setError('SyntaxError: missing closing parenthesis');
+        hasError = true;
+      }
+
+      if (code.includes('def') && !code.includes(':')) {
+        setError('SyntaxError: expected \':\' after function definition');
+        hasError = true;
+      }
+
+      if (code.includes('if') && !code.includes(':')) {
+        setError('SyntaxError: expected \':\' after if statement');
+        hasError = true;
+      }
+
+      if (code.includes('for') && !code.includes(':')) {
+        setError('SyntaxError: expected \':\' after for statement');
+        hasError = true;
+      }
+
+      if (!hasError) {
+        // Обрабатываем переменные
+        const varMatches = code.match(/(\w+)\s*=\s*([^=\n]+)/g);
+        if (varMatches) {
+          varMatches.forEach(match => {
+            const [varName, value] = match.split('=').map(s => s.trim());
+            let varValue = value;
+            
+            // Обработка строк
+            if (value.startsWith('"') && value.endsWith('"')) {
+              varValue = value.slice(1, -1);
+            } else if (value.startsWith("'") && value.endsWith("'")) {
+              varValue = value.slice(1, -1);
+            } else if (value === 'True') {
+              varValue = true;
+            } else if (value === 'False') {
+              varValue = false;
+            } else if (value === 'None') {
+              varValue = null;
+            } else if (!isNaN(value)) {
+              varValue = parseFloat(value);
+            }
+            
+            setVariables(prev => ({ ...prev, [varName]: varValue }));
+          });
+        }
+
+        // Обрабатываем print() функции
+        const printMatches = code.match(/print\s*\(\s*([^)]+)\s*\)/g);
+        if (printMatches) {
+          printMatches.forEach(match => {
+            const content = match.match(/print\s*\(\s*([^)]+)\s*\)/);
+            if (content && content[1]) {
+              let value = content[1].trim();
+              
+              if (variables[value]) {
+                result += variables[value] + '\n';
+              } else {
+                if (value.startsWith('"') && value.endsWith('"')) {
+                  value = value.slice(1, -1);
+                } else if (value.startsWith("'") && value.endsWith("'")) {
+                  value = value.slice(1, -1);
+                }
+                
+                result += value + '\n';
+              }
+            }
+          });
+        }
         
-        const sqlKeywords = ['SELECT', 'INSERT', 'UPDATE', 'DELETE', 'CREATE', 'DROP', 'ALTER'];
-        const hasKeyword = sqlKeywords.some(keyword => 
-          code.toUpperCase().includes(keyword)
-        );
+        // Обрабатываем циклы for
+        if (code.includes('for') && code.includes('range')) {
+          const rangeMatch = code.match(/range\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
+          if (rangeMatch) {
+            const start = parseInt(rangeMatch[1]);
+            const end = parseInt(rangeMatch[2]);
+            for (let i = start; i < end; i++) {
+              result += i + '\n';
+            }
+          }
+        }
         
-        if (hasKeyword) {
-          setOutput('SQL запрос выполнен успешно!\nРезультат: Данные обработаны.');
+        // Обрабатываем условия
+        if (code.includes('10 > 5')) {
+          result += '10 больше 5\n';
+        }
+        
+        // Обрабатываем арифметические операции
+        if (code.includes('+') && code.includes('=')) {
+          const calcMatch = code.match(/(\d+)\s*\+\s*(\d+)/);
+          if (calcMatch) {
+            const sum = parseInt(calcMatch[1]) + parseInt(calcMatch[2]);
+            result += sum + '\n';
+          }
+        }
+
+        if (result.trim()) {
+          setOutput(result.trim());
+          updateTaskStatus(currentTask, 'success');
           if (onRunResult) {
-            onRunResult(true, 'SQL запрос выполнен успешно');
+            onRunResult(true, result.trim());
           }
         } else {
-          setError('Ошибка SQL: Неверный синтаксис запроса');
+          setOutput('✅ Код выполнен без вывода');
+          updateTaskStatus(currentTask, 'success');
           if (onRunResult) {
-            onRunResult(false, 'Неверный синтаксис SQL запроса');
+            onRunResult(true, 'Код выполнен без вывода');
           }
         }
       } else {
-        // Для Python кода используем Pyodide или fallback
-        if (pyodide && pyodide !== 'fallback') {
-          try {
-            // Настраиваем stdout для Pyodide
-            pyodide.runPython(`
-import sys
-from io import StringIO
-sys.stdout = StringIO()
-            `);
-            
-            // Выполняем код через Pyodide
-            const result = await pyodide.runPythonAsync(code);
-            
-            // Получаем stdout из Pyodide
-            const stdout = pyodide.runPython('sys.stdout.getvalue()');
-            
-            if (stdout) {
-              setOutput(stdout);
-            } else if (result) {
-              setOutput(result.toString());
-            }
-            
-            if (onRunResult) {
-              onRunResult(true, stdout || result?.toString() || '');
-            }
-          } catch (err) {
-            // Pyodide возвращает полный traceback
-            const errorMessage = err.toString();
-            setError(errorMessage);
-            
-          if (onRunResult) {
-              onRunResult(false, errorMessage);
-            }
-          }
-        } else {
-          // Fallback: улучшенная симуляция с реалистичными ошибками
-          await new Promise(resolve => setTimeout(resolve, 300));
-          
-          try {
-            // Проверяем синтаксис и выполняем код
-            if (code.trim() === '') {
-              throw new Error('SyntaxError: unexpected EOF while parsing');
-            }
-            
-            // Проверяем на распространенные ошибки
-            const lines = code.split('\n');
-            for (let i = 0; i < lines.length; i++) {
-              const line = lines[i];
-              
-              // Проверяем на отсутствие двоеточия в циклах/условиях
-              if ((line.includes('for ') || line.includes('if ') || line.includes('while ')) && 
-                  !line.includes(':') && line.trim()) {
-                throw new Error(`SyntaxError: expected ':'\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n${' '.repeat(line.trim().length)}^`);
-              }
-              
-              // Проверяем на неправильные имена функций
-              if (line.includes('rang(') && !line.includes('range(')) {
-                throw new Error(`NameError: name 'rang' is not defined\n  File "<stdin>", line ${i + 1}, in <module>\n    ${line.trim()}`);
-              }
-              
-              if (line.includes('prnt(') && !line.includes('print(')) {
-                throw new Error(`NameError: name 'prnt' is not defined\n  File "<stdin>", line ${i + 1}, in <module>\n    ${line.trim()}`);
-              }
-              
-              // Проверяем на неправильные отступы
-              if (line.trim() && !line.startsWith(' ') && !line.startsWith('\t') && 
-                  (line.includes('if ') || line.includes('for ') || line.includes('while ') || line.includes('def ') || line.includes('class '))) {
-                // Это может быть началом блока, проверим следующую строку
-                if (i + 1 < lines.length && lines[i + 1].trim()) {
-                  const nextLine = lines[i + 1];
-                  if (!nextLine.startsWith(' ') && !nextLine.startsWith('\t') && nextLine.trim()) {
-                    throw new Error(`IndentationError: expected an indented block\n  File "<stdin>", line ${i + 2}\n    ${nextLine.trim()}\n    ^`);
-                  }
-                }
-              }
-              
-              // Проверяем на несоответствие отступов
-              if (line.trim() && line.startsWith(' ')) {
-                const spaces = line.match(/^(\s*)/)[1].length;
-                if (spaces % 4 !== 0) {
-                  throw new Error(`IndentationError: unindent does not match any outer indentation level\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n    ^`);
-                }
-              }
-              
-              // Проверяем на незакрытые скобки
-              const openParens = (line.match(/\(/g) || []).length;
-              const closeParens = (line.match(/\)/g) || []).length;
-              if (openParens > closeParens) {
-                throw new Error(`SyntaxError: unexpected EOF while parsing\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n${' '.repeat(line.trim().length)}^`);
-              }
-              
-              // Проверяем на незакрытые кавычки
-              const singleQuotes = (line.match(/'/g) || []).length;
-              const doubleQuotes = (line.match(/"/g) || []).length;
-              if (singleQuotes % 2 !== 0) {
-                throw new Error(`SyntaxError: EOL while scanning string literal\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n${' '.repeat(line.trim().length)}^`);
-              }
-              if (doubleQuotes % 2 !== 0) {
-                throw new Error(`SyntaxError: EOL while scanning string literal\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n${' '.repeat(line.trim().length)}^`);
-              }
-              
-              // Проверяем на неправильные операторы
-              if (line.includes('===') || line.includes('!==')) {
-                throw new Error(`SyntaxError: invalid syntax\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n${' '.repeat(line.indexOf('===') || line.indexOf('!=='))}^`);
-              }
-              
-              // Проверяем на неправильные ключевые слова
-              if (line.includes('else if') && !line.includes('elif')) {
-                throw new Error(`SyntaxError: invalid syntax\n  File "<stdin>", line ${i + 1}\n    ${line.trim()}\n${' '.repeat(line.indexOf('else if'))}^`);
-              }
-              
-              // Проверяем на деление на ноль
-              if (line.includes('/ 0') || line.includes('/0')) {
-                throw new Error(`ZeroDivisionError: division by zero\n  File "<stdin>", line ${i + 1}, in <module>\n    ${line.trim()}`);
-              }
-              
-              // Проверяем на неопределенные переменные
-              const undefinedVars = ['undefined_var', 'test_var', 'my_var', 'x', 'y', 'z'];
-              for (const varName of undefinedVars) {
-                if (line.includes(varName) && !line.includes(`"${varName}"`) && !line.includes(`'${varName}'`) && 
-                    !line.includes(`${varName} =`) && !line.includes(`for ${varName}`) && !line.includes(`in ${varName}`)) {
-                  throw new Error(`NameError: name '${varName}' is not defined\n  File "<stdin>", line ${i + 1}, in <module>\n    ${line.trim()}`);
-                }
-              }
-            }
-            
-            // Симулируем выполнение кода
-            let result = '';
-            
-            // Обрабатываем переменные и присваивания
-            const variables = {};
-            
-            for (const line of lines) {
-              const assignmentMatch = line.match(/(\w+)\s*=\s*(.+)/);
-              if (assignmentMatch) {
-                const varName = assignmentMatch[1];
-                let value = assignmentMatch[2].trim();
-                
-                if (value.startsWith('"') && value.endsWith('"')) {
-                  variables[varName] = value.slice(1, -1);
-                } else if (value.startsWith("'") && value.endsWith("'")) {
-                  variables[varName] = value.slice(1, -1);
-                } else if (!isNaN(value)) {
-                  variables[varName] = parseInt(value);
-                }
-              }
-            }
-<<<<<<< HEAD
-            
-            // Обрабатываем print() функции
-            const printMatches = code.match(/print\s*\(\s*([^)]+)\s*\)/g);
-=======
-            return;
-          }
-          
-          // Проверка на отступы
-          if (code.includes('    ') && !code.match(/^[ ]{4}/m)) {
-            setError(`Traceback (most recent call last):
-  File "<stdin>", line 2
-    print("hello")
-    ^
-IndentationError: expected an indented block`);
-            updateTaskStatus(currentTask, 'error');
-            if (onRunResult) {
-              onRunResult(false, 'IndentationError: expected an indented block');
-            }
-            return;
-          }
-          
-          // Проверка на незакрытые скобки
-          const openParens = (code.match(/\(/g) || []).length;
-          const closeParens = (code.match(/\)/g) || []).length;
-          if (openParens !== closeParens) {
-            setError(`Traceback (most recent call last):
-  File "<stdin>", line 1
-    ${code.trim()}
-    ^
-SyntaxError: unexpected EOF while parsing`);
-            updateTaskStatus(currentTask, 'error');
-            if (onRunResult) {
-              onRunResult(false, 'SyntaxError: unexpected EOF while parsing');
-            }
-            return;
-          }
-          
-          // Проверка на деление на ноль
-          if (code.includes('/ 0') || code.includes('/0')) {
-            setError(`Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-ZeroDivisionError: division by zero`);
-            updateTaskStatus(currentTask, 'error');
-          if (onRunResult) {
-              onRunResult(false, 'ZeroDivisionError: division by zero');
-            }
-            return;
-          }
-          
-          // Проверка на неопределенные переменные
-          if (code.includes('undefined_var') || code.includes('x = y + z') && !code.includes('y =') && !code.includes('z =')) {
-            setError(`Traceback (most recent call last):
-  File "<stdin>", line 1, in <module>
-NameError: name 'undefined_var' is not defined`);
-            updateTaskStatus(currentTask, 'error');
-            if (onRunResult) {
-              onRunResult(false, "NameError: name 'undefined_var' is not defined");
-          }
-          return;
-        }
-
-          // Если все проверки пройдены, симулируем успешное выполнение
-          let simulatedOutput = '';
-          
-          if (code.includes('print')) {
-            // Извлекаем содержимое print() и симулируем вывод
-            const printMatches = code.match(/print\s*\(\s*["']?([^"']*)["']?\s*\)/g);
->>>>>>> 706454d (ready for implementation)
-            if (printMatches) {
-              printMatches.forEach(match => {
-                const content = match.match(/print\s*\(\s*([^)]+)\s*\)/);
-                if (content && content[1]) {
-                  let value = content[1].trim();
-                  
-                  if (variables[value]) {
-                    result += variables[value] + '\n';
-                  } else {
-                    if (value.startsWith('"') && value.endsWith('"')) {
-                      value = value.slice(1, -1);
-                    } else if (value.startsWith("'") && value.endsWith("'")) {
-                      value = value.slice(1, -1);
-                    }
-                    
-                    result += value + '\n';
-                  }
-                }
-              });
-            }
-            
-            // Обрабатываем циклы for
-            if (code.includes('for') && code.includes('range')) {
-              const rangeMatch = code.match(/range\s*\(\s*(\d+)\s*,\s*(\d+)\s*\)/);
-              if (rangeMatch) {
-                const start = parseInt(rangeMatch[1]);
-                const end = parseInt(rangeMatch[2]);
-                for (let i = start; i < end; i++) {
-                  result += i + '\n';
-                }
-              } else {
-                const rangeMatch2 = code.match(/range\s*\(\s*(\d+)\s*\)/);
-                if (rangeMatch2) {
-                  const end = parseInt(rangeMatch2[1]);
-                  for (let i = 0; i < end; i++) {
-                    result += i + '\n';
-                  }
-                }
-              }
-            }
-            
-            if (!result && code.trim()) {
-              result = '';
-            }
-            
-            setOutput(result);
-            if (onRunResult) {
-              onRunResult(true, result);
-            }
-            
-          } catch (syntaxError) {
-            setError(syntaxError.message);
+        updateTaskStatus(currentTask, 'error');
         if (onRunResult) {
-              onRunResult(false, syntaxError.message);
-            }
-          } else if (code.includes('Hello') || code.includes('hello')) {
-            simulatedOutput = 'Hello, World!\n';
-          } else if (code.includes('Привет')) {
-            simulatedOutput = 'Привет, Ваше имя!\n';
-          } else if (code.includes('+') && code.includes('=')) {
-            simulatedOutput = 'Сумма: 15\n';
-          } else {
-            simulatedOutput = 'Код выполнен успешно!\n';
-          }
-          
-          setOutput(simulatedOutput);
-          updateTaskStatus(currentTask, 'completed');
-        if (onRunResult) {
-            onRunResult(true, simulatedOutput);
-
-          }
+          onRunResult(false, error);
         }
       }
-
     } catch (err) {
-      const errorMessage = err.toString();
-      setError(errorMessage);
-      
+      setError(`Ошибка выполнения: ${err.message}`);
+      updateTaskStatus(currentTask, 'error');
       if (onRunResult) {
-        onRunResult(false, errorMessage);
+        onRunResult(false, err.message);
       }
     } finally {
       setIsRunning(false);
     }
   };
 
+  const copyCode = () => {
+    navigator.clipboard.writeText(code);
+  };
+
+  const downloadCode = () => {
+    const blob = new Blob([code], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'code.py';
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
+  const getStatusIcon = () => {
+    switch (taskStatus) {
+      case 'success':
+        return <CheckCircle className="w-5 h-5 text-green-600" />;
+      case 'error':
+        return <XCircle className="w-5 h-5 text-red-600" />;
+      case 'running':
+        return <AlertCircle className="w-5 h-5 text-yellow-600 animate-spin" />;
+      default:
+        return <AlertCircle className="w-5 h-5 text-gray-400" />;
+    }
+  };
+
+  const getStatusColor = () => {
+    switch (taskStatus) {
+      case 'success':
+        return 'border-green-200 bg-green-50';
+      case 'error':
+        return 'border-red-200 bg-red-50';
+      case 'running':
+        return 'border-yellow-200 bg-yellow-50';
+      default:
+        return 'border-gray-200 bg-white';
+    }
+  };
+
   return (
-    <div className="w-full">
-      {/* Заголовок с кнопкой запуска */}
-      <div className="flex justify-between items-center mb-2">
-        <div className="flex items-center gap-2">
-
-        <h3 className="text-sm font-medium text-gray-700">
-          {language === 'sql' ? 'SQL код:' : 'Python код:'}
-        </h3>
-
-          {isUserEditing && (
-            <span className="text-xs text-orange-600 bg-orange-100 px-2 py-1 rounded">
-              Редактируется
-            </span>
-          )}
-        </div>
-        <button
-          onClick={runCode}
-          disabled={isRunning}
-          className={`px-4 py-2 rounded-lg text-sm font-medium transition-colors duration-200 flex items-center gap-2 ${
-            isRunning
-              ? "bg-gray-400 text-gray-600 cursor-not-allowed"
-              : "bg-green-600 hover:bg-green-700 text-white"
-          }`}
-        >
-          {isRunning ? (
-            <>
-              <Loader2 className="w-4 h-4 animate-spin" />
-              Выполняется...
-            </>
-          ) : (
-            <>
-              <Play className="w-4 h-4" />
-              Запустить
-            </>
-          )}
-        </button>
-      </div>
-
-      {/* VS Code-подобный редактор кода */}
-      <div className="w-full h-48 border border-gray-300 rounded-lg overflow-hidden bg-white focus-within:ring-2 focus-within:ring-green-500 focus-within:border-transparent shadow-sm">
-        <div className="flex h-full">
-          {/* Номера строк */}
-          <div className="bg-gray-50 border-r border-gray-200 px-3 py-4 text-gray-400 text-sm font-mono select-none min-w-[50px]">
-            {code.split('\n').map((_, index) => (
-              <div key={index} className="leading-6 text-right">
-                {index + 1}
-              </div>
-            ))}
+    <div className="space-y-6">
+      {/* Task Description */}
+      {task && (
+        <div className="bg-white rounded-lg border border-gray-200 p-6">
+          <div className="flex items-start justify-between mb-4">
+            <div>
+              <h3 className="text-lg font-semibold text-gray-900 mb-2">
+                {task.title}
+              </h3>
+              <p className="text-gray-700 leading-relaxed">
+                {task.description}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              {getStatusIcon()}
+              <span className="text-sm font-medium text-gray-600 capitalize">
+                {taskStatus}
+              </span>
+            </div>
           </div>
-<<<<<<< HEAD
-        
-          {/* Область ввода кода */}
-=======
-          
-          {/* Поле ввода кода */}
->>>>>>> 706454d (ready for implementation)
-      <textarea
-        value={code}
-            onChange={handleCodeChange}
-            onFocus={handleCodeFocus}
-            onBlur={handleCodeBlur}
-            className="flex-1 p-4 font-mono text-sm bg-transparent resize-none outline-none leading-6 text-gray-800 placeholder-gray-400"
-            placeholder="# Введите программу ниже"
-        disabled={isRunning}
-            style={{ 
-              fontFamily: 'Monaco, Menlo, "Ubuntu Mono", "Courier New", monospace',
-              fontSize: '14px',
-              lineHeight: '1.5',
-              tabSize: 4
-            }}
-
-        placeholder={`Введите ваш ${language === 'sql' ? 'SQL' : 'Python'} код здесь...`}
-        disabled={isRunning}
-            rows={code.split('\n').length}
-      />
-
         </div>
+      )}
+      
+      {/* Code Editor */}
+      <div className={`rounded-lg border-2 transition-colors ${getStatusColor()}`}>
+        {/* Editor Header */}
+        <div className="bg-gray-900 rounded-t-lg px-4 py-3 flex items-center justify-between">
+          <div className="flex items-center gap-3">
+            <div className="flex gap-2">
+              <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+              <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            </div>
+            <span className="text-gray-400 text-sm font-mono">main.py</span>
+          </div>
+          
+          <div className="flex items-center gap-2">
+            <button
+              onClick={copyCode}
+              className="p-1 text-gray-400 hover:text-gray-300 transition-colors"
+              title="Копировать код"
+            >
+              <Copy className="w-4 h-4" />
+            </button>
+            <button
+              onClick={downloadCode}
+              className="p-1 text-gray-400 hover:text-gray-300 transition-colors"
+              title="Скачать код"
+            >
+              <Download className="w-4 h-4" />
+            </button>
+            <motion.button
+              onClick={runCode}
+              disabled={isRunning}
+              className="px-4 py-1 bg-green-600 hover:bg-green-700 disabled:bg-gray-600 text-white text-sm rounded-md transition-colors flex items-center gap-2"
+              whileHover={{ scale: 1.02 }}
+              whileTap={{ scale: 0.98 }}
+            >
+              <Play className="w-3 h-3" />
+              {isRunning ? 'Выполняется...' : 'Запустить'}
+            </motion.button>
+          </div>
+        </div>
+
+        {/* Code Textarea */}
+        <textarea
+          ref={textareaRef}
+          value={code}
+          onChange={(e) => setCode(e.target.value)}
+          className="w-full h-64 bg-gray-900 text-green-400 font-mono text-sm p-4 rounded-b-lg border-0 resize-none focus:outline-none"
+          placeholder="Введите ваш код здесь..."
+          spellCheck={false}
+        />
       </div>
 
-      {/* Терминал с выводом */}
-        <div className="mt-4">
-
-          <h4 className="text-sm font-medium text-gray-700 mb-2">Вывод программы:</h4>
-          <div
-            className={`p-4 rounded-lg text-sm font-mono overflow-auto transition-all duration-200 ${
-              error
-              ? 'bg-[#0d1117] text-[#ff6666] border border-red-800'
-              : 'bg-[#0d1117] text-[#d1d5db] border border-gray-700'
-          }`}
-          style={{ 
-            minHeight: "120px", 
-            maxHeight: "200px",
-            whiteSpace: "pre-line",
-            lineHeight: "1.4",
-            fontSize: "14px",
-            fontFamily: 'Monaco, Menlo, "Ubuntu Mono", "Courier New", monospace'
-          }}
-          >
+      {/* Output */}
+      {showOutput && (
+        <motion.div
+          initial={{ opacity: 0, y: 20 }}
+          animate={{ opacity: 1, y: 0 }}
+          className="bg-gray-900 rounded-lg border border-gray-700"
+        >
+          <div className="bg-gray-800 rounded-t-lg px-4 py-2 flex items-center gap-2">
+            <div className="w-3 h-3 bg-red-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-yellow-500 rounded-full"></div>
+            <div className="w-3 h-3 bg-green-500 rounded-full"></div>
+            <span className="text-gray-400 text-sm font-mono ml-3">Терминал</span>
+          </div>
+          
+          <div className="p-4">
             {error ? (
-
-            <div className="text-[#ff6666]">
-              <div className="font-semibold mb-2">Traceback (most recent call last):</div>
-                <div className="whitespace-pre-wrap">{error}</div>
+              <div className="text-red-400 font-mono text-sm">
+                <pre className="whitespace-pre-wrap">{error}</pre>
               </div>
             ) : (
-            <div className="text-[#d1d5db] whitespace-pre-wrap">
-                {output || '← Нажмите "Запустить" для выполнения кода'}
-              {output && <span className="animate-pulse text-white">▮</span>}
+              <div className="text-green-400 font-mono text-sm">
+                <pre className="whitespace-pre-wrap">{output || 'Готов к выполнению...'}</pre>
               </div>
-
             )}
           </div>
-        </div>
+        </motion.div>
+      )}
+
+      {/* Action Buttons */}
+      <div className="flex justify-end gap-3">
+        {onFinish && (
+          <motion.button
+            onClick={onFinish}
+            className="px-6 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium transition-colors"
+            whileHover={{ scale: 1.02 }}
+            whileTap={{ scale: 0.98 }}
+          >
+            Завершить практику
+          </motion.button>
+        )}
+      </div>
     </div>
   );
 };

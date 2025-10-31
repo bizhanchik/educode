@@ -80,6 +80,9 @@ const UserMenu = ({ onPageChange }) => {
       console.error('Logout function not available');
     }
     setIsOpen(false);
+    if (onPageChange) {
+      onPageChange('home');
+    }
   };
 
   const handleMyCourses = () => {

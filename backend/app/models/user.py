@@ -47,6 +47,7 @@ class User(Base):
     email = Column(String(255), unique=True, nullable=False, index=True)
     password_hash = Column(String(255), nullable=False)
     role = Column(SQLEnum(UserRole), nullable=False, index=True)
+    phone = Column(String(20), nullable=True)  # Contact phone for teachers
     
     # Group relationship (optional for admins/teachers)
     group_id = Column(Integer, ForeignKey("groups.id"), nullable=True, index=True)
@@ -61,6 +62,7 @@ class User(Base):
 
     # Teacher relationships
     lessons = relationship("Lesson", back_populates="teacher", foreign_keys="Lesson.teacher_id", lazy="selectin")
+    teaching_groups = relationship("Group", secondary="group_teachers", lazy="selectin", overlaps="teachers")
 
     # Student relationships
     submissions = relationship("Submission", back_populates="student", foreign_keys="Submission.student_id", lazy="selectin")
