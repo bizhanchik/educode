@@ -45,6 +45,7 @@ const Home = ({ onOpenModal, onPageChange }) => {
     console.warn('Home: useAuth not available', error);
   }
 
+  
   return (
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7]">
       <Hero onOpenModal={onOpenModal} onPageChange={onPageChange} />

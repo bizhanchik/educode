@@ -330,11 +330,12 @@ const DatabaseBasics = ({ onPageChange }) => {
                       whileTap={{ scale: 0.98 }}
                       onClick={handleStartTasks}
                     >
-                      Начать задания
+                      Начать задания 
                     </motion.button>
                   </div>
                 </div>
               ) : (
+      
                 <>
                   {/* Task Navigation */}
                   <div className="mb-6 sm:mb-8">

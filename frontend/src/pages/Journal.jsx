@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import { BookOpen, Users, GraduationCap, UserCog, BarChart3, Settings, LogOut } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import BackButton from '../components/BackButton.jsx';
 
@@ -22,15 +23,6 @@ const mockGroups = [
   { id: 2, name: 'ПМ-22', students: 12, curator: 'Мартынцов Н.В.' },
 ];
 
-const tabs = [
-  { id: 'courses', label: 'Предметы (курсы)' },
-  { id: 'teachers', label: 'Преподаватели' },
-  { id: 'students', label: 'Студенты' },
-  { id: 'groups', label: 'Группы' },
-  { id: 'statistics', label: 'Статистика' },
-  { id: 'settings', label: 'Настройки' },
-];
-
 const Journal = ({ onPageChange }) => {
   // Определяем админа (через контекст и запасной путь localStorage)
   let isAdmin = false;
@@ -47,6 +39,7 @@ const Journal = ({ onPageChange }) => {
   }
 
   const [tab, setTab] = useState('courses');
+  const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [detailCourse, setDetailCourse] = useState(null);
   const [editCourse, setEditCourse] = useState(null);
   const [deleteCourse, setDeleteCourse] = useState(null);
@@ -127,16 +120,122 @@ const Journal = ({ onPageChange }) => {
   }
 
   // АДМИН-ЖУРНАЛ (вкладки и разделы)
-  return (
-    <div className="bg-white min-h-screen">
-      <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
+  const sidebarItems = [
+    { id: 'courses', label: 'Курсы', icon: BookOpen },
+    { id: 'teachers', label: 'Преподаватели', icon: GraduationCap },
+    { id: 'students', label: 'Студенты', icon: Users },
+    { id: 'groups', label: 'Группы', icon: UserCog },
+    { id: 'statistics', label: 'Статистика', icon: BarChart3 },
+    { id: 'settings', label: 'Настройки', icon: Settings },
+  ];
 
-      <section className="pt-20 pb-8 px-6">
-        <div className="max-w-7xl mx-auto">
-          <div className="mb-2">
-            {isAdmin ? (
-              <div className="flex justify-between items-center flex-wrap gap-2">
-                <h1 className="text-[28px] font-bold text-gray-900">ЖУРНАЛ КУРСОВ</h1>
+  return (
+    <div className="bg-white min-h-screen flex">
+      {/* Фиксированное боковое меню */}
+      {isAdmin && (
+        <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-gray-200 shadow-sm flex-col p-5 z-30">
+          {/* Заголовок */}
+          <div className="pt-20 mb-6">
+            <h1 className="text-lg font-bold text-gray-900">ЖУРНАЛ КУРСОВ</h1>
+          </div>
+          {/* Навигация */}
+          <nav className="flex-1 flex flex-col gap-1">
+            {sidebarItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => setTab(item.id)}
+                  className={`flex items-center gap-3 py-2 px-3 rounded-md transition-all duration-200 ${
+                    tab === item.id
+                      ? 'bg-gray-100 text-blue-600 font-semibold'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+      )}
+
+      {/* Мобильное бургер-меню (скрытое по умолчанию) */}
+      {isAdmin && (
+        <>
+          <button
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden fixed top-20 left-4 z-50 text-gray-600 hover:text-gray-900 text-2xl"
+            aria-label="Меню"
+          >
+            {isMobileMenuOpen ? '✖' : '☰'}
+          </button>
+          {isMobileMenuOpen && (
+            <>
+              <div
+                className="lg:hidden fixed inset-0 bg-black/30 z-40"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <aside className="lg:hidden fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-gray-200 shadow-lg flex flex-col p-5 z-50">
+                <nav className="flex-1 flex flex-col gap-1 pt-20">
+                  {sidebarItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setTab(item.id);
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`flex items-center gap-3 py-2 px-3 rounded-md transition-all duration-200 ${
+                          tab === item.id
+                            ? 'bg-gray-100 text-blue-600 font-semibold'
+                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+                <button
+                  className="flex items-center gap-3 text-gray-400 hover:text-red-500 py-2 px-3 rounded-md transition-all duration-200 hover:bg-gray-50 mt-auto"
+                  onClick={() => {
+                    console.log('Выйти');
+                    setMobileMenuOpen(false);
+                  }}
+                >
+                  <LogOut size={18} />
+                  <span className="text-sm font-medium">Выйти</span>
+                </button>
+              </aside>
+            </>
+          )}
+        </>
+      )}
+
+      {/* Основной контент */}
+      <main className={`flex-1 ${isAdmin ? 'lg:ml-[240px]' : ''}`}>
+        <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
+
+        <section className="pt-20 pb-8 px-6">
+          <div className="max-w-7xl mx-auto">
+            {!isAdmin && (
+              <div className="mb-2">
+                <h1 className="text-[28px] font-bold text-gray-900">ЖУРНАЛ</h1>
+              </div>
+            )}
+            {isAdmin && (
+              <>
+                <div className="mb-2">
+                  <h1 className="text-[28px] font-bold text-gray-900">
+                    {sidebarItems.find(item => item.id === tab)?.label || 'Курсы'}
+                  </h1>
+                </div>
+                {tab === 'courses' && (
+              <div className="mb-2 flex justify-end">
                 <div className="relative w-72">
                   <input
                     type="text"
@@ -150,16 +249,10 @@ const Journal = ({ onPageChange }) => {
                   </svg>
                 </div>
               </div>
-            ) : (
-              <h1 className="text-[28px] font-bold text-gray-900">ЖУРНАЛ</h1>
             )}
-          </div>
-          {isAdmin && (
-            <p className="text-sm text-gray-500 mb-6">Список предметов, преподавателей и прикреплённых групп. Администратор может просматривать, редактировать и управлять курсами.</p>
-          )}
 
-          {/* Модалки: Подробнее / Редактировать / Удалить */}
-          {detailCourse && (
+            {/* Модалки: Подробнее / Редактировать / Удалить */}
+            {detailCourse && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4">
               <div className="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">Детали курса</h3>
@@ -212,19 +305,6 @@ const Journal = ({ onPageChange }) => {
                   <button className="px-3 py-2 bg-red-600 text-white rounded-lg text-sm hover:bg-red-700" onClick={()=>setDeleteCourse(null)}>Удалить</button>
                 </div>
               </div>
-            </div>
-          )}
-          {isAdmin && (
-            <div className="mb-6 flex items-center gap-2 overflow-x-auto">
-              {tabs.map(t => (
-                <button
-                  key={t.id}
-                  className={`px-4 py-2 rounded-lg text-sm font-medium border whitespace-nowrap ${tab===t.id ? 'bg-blue-600 text-white border-blue-600' : 'bg-white text-gray-700 border-gray-300 hover:bg-gray-50'}`}
-                  onClick={() => setTab(t.id)}
-                >
-                  {t.label}
-                </button>
-              ))}
             </div>
           )}
 
@@ -320,9 +400,6 @@ const Journal = ({ onPageChange }) => {
                 </table>
                 {/* Пагинация убрана по запросу */}
               </div>
-              {isAdmin && (
-                <p className="text-xs text-gray-500 mt-3">Эта таблица отображает все учебные курсы и их преподавателей. Администратор может добавлять, изменять и удалять предметы, а также управлять связанными группами.</p>
-              )}
             </div>
           )}
 
@@ -502,14 +579,17 @@ const Journal = ({ onPageChange }) => {
               </div>
             </div>
           )}
+              </>
+            )}
 
           {!isAdmin && (
             <div className="bg-white border rounded-xl shadow p-8 text-center text-gray-700 mt-8">
               Обычный журнал для студентов/преподавателей (админ-вкладки скрыты).
             </div>
           )}
-        </div>
-      </section>
+          </div>
+        </section>
+      </main>
     </div>
   );
 };
