@@ -19,7 +19,7 @@ from app.routes import (
     evaluations_router,
     ai_solutions_router
 )
-from routes.practice import router as practice_router
+# from routes.practice import router as practice_router  # Commented out - route not implemented yet
 
 # Create FastAPI application
 app = FastAPI(
@@ -48,7 +48,7 @@ app.include_router(tasks_router)
 app.include_router(submissions_router)
 app.include_router(evaluations_router)
 app.include_router(ai_solutions_router)
-app.include_router(practice_router, prefix="/api/practice", tags=["practice"])
+# app.include_router(practice_router, prefix="/api/practice", tags=["practice"])  # Commented out - route not implemented yet
 
 
 @app.get("/")
