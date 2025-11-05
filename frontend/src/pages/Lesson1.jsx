@@ -527,34 +527,174 @@ const Lesson1 = ({ onPageChange }) => {
                     <h2 className="text-xl font-semibold text-gray-900">Тестирование</h2>
                   </div>
                   
-                  <div className="text-center py-4 mb-6">
-                    <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                      Основы языка программирования Python
-                    </h3>
-                    <p className="text-gray-700 mb-4">
-                      Пройдите интерактивный тест для проверки знаний по основам Python
-                    </p>
-                  </div>
+                  {!isTestActive && !testCompleted && (
+                    <div className="text-center py-8">
+                      <div className="w-16 h-16 bg-blue-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <FileText className="w-8 h-8 text-blue-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Тестирование по теме урока
+                      </h3>
+                      <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
+                        Проверьте свои знания с помощью интерактивного тестирования. Ответьте на вопросы по изученному материалу.
+                        Тест состоит из {testQuestions.length} вопросов с вариантами ответов.
+                        Время на выполнение: 20 минут.
+                      </p>
+                      <motion.button
+                        onClick={startTest}
+                        className="px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-medium rounded-lg transition-colors"
+                        whileHover={{ scale: 1.02 }}
+                        whileTap={{ scale: 0.98 }}
+                      >
+                        Начать тестирование
+                      </motion.button>
+                    </div>
+                  )}
+                  
+                  {isTestActive && (
+                    <div className="mt-6">
+                      {/* Таймер */}
+                      <div className="bg-green-50 border border-green-200 rounded-lg p-4 mb-6">
+                        <div className="flex items-center justify-between">
+                          <div className="flex items-center gap-2">
+                            <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
+                            <span className="text-green-700 font-medium">Время тестирования</span>
+                          </div>
+                          <div className="text-green-700 font-bold text-lg">
+                            {Math.floor(testTimeLeft / 60)}:{(testTimeLeft % 60).toString().padStart(2, '0')}
+                          </div>
+                        </div>
+                      </div>
 
-                  {/* Wayground тест */}
-                  <div style={{width:'100%',display:'flex',flexDirection:'column',gap:'8px',minHeight:'635px'}}>
-                    <iframe 
-                      src="https://wayground.com/embed/quiz/68faf5cea9f13847b19aeeef" 
-                      title="Основы языка программирования Python - Wayground" 
-                      style={{flex:'1'}} 
-                      frameBorder="0" 
-                      allowFullScreen
-                      className="w-full rounded-lg"
-                    />
-                    <a 
-                      href="https://wayground.com/admin?source=embedFrame" 
-                      target="_blank" 
-                      rel="noopener noreferrer"
-                      className="text-xs text-gray-500 hover:text-gray-700 text-center"
-                    >
-                      Explore more at Wayground.
-                    </a>
-                  </div>
+                      {/* Навигация по вопросам */}
+                      <div className="mb-6">
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">Переход к вопросу:</h4>
+                        <div className="flex flex-wrap gap-2">
+                          {testQuestions.map((_, index) => (
+                            <button
+                              key={index}
+                              onClick={() => setCurrentQuestion(index)}
+                              className={`w-10 h-10 rounded-lg text-sm font-medium transition-colors ${
+                                index === currentQuestion 
+                                  ? 'bg-blue-600 text-white' 
+                                  : userAnswers[testQuestions[index].id] !== undefined
+                                  ? 'bg-gray-300 text-gray-800 border border-gray-400'
+                                  : 'bg-gray-100 text-gray-600 border border-gray-300 hover:bg-gray-200'
+                              }`}
+                              title={`Вопрос ${index + 1}${userAnswers[testQuestions[index].id] !== undefined ? ' (отвечен)' : ''}`}
+                            >
+                              {index + 1}
+                            </button>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Прогресс */}
+                      <div className="mb-6">
+                        <div className="text-sm text-gray-600">
+                          <span>Вопрос {currentQuestion + 1} из {testQuestions.length}</span>
+                        </div>
+                      </div>
+
+                      {/* Вопрос */}
+                      <div className="mb-6">
+                        <h3 className="text-lg font-semibold text-gray-900 mb-4">
+                          {testQuestions[currentQuestion].question}
+                        </h3>
+                        <div className="space-y-3">
+                          {testQuestions[currentQuestion].options.map((option, index) => (
+                            <label key={index} className="flex items-center p-3 border border-gray-200 rounded-lg hover:bg-gray-50 cursor-pointer">
+                              <input
+                                type="radio"
+                                name={`question-${testQuestions[currentQuestion].id}`}
+                                value={index}
+                                checked={userAnswers[testQuestions[currentQuestion].id] === index}
+                                onChange={() => handleAnswerSelect(testQuestions[currentQuestion].id, index)}
+                                className="mr-3"
+                              />
+                              <span className="text-gray-700">{option}</span>
+                            </label>
+                          ))}
+                        </div>
+                      </div>
+
+                      {/* Навигация */}
+                      <div className="flex justify-between">
+                        <button
+                          onClick={prevQuestion}
+                          disabled={currentQuestion === 0}
+                          className="px-4 py-2 border border-gray-300 rounded-lg text-gray-700 hover:bg-gray-50 disabled:opacity-50 disabled:cursor-not-allowed"
+                        >
+                          ← Предыдущий
+                        </button>
+                        
+                        {currentQuestion === testQuestions.length - 1 ? (
+                          <button
+                            onClick={finishTest}
+                            className="px-6 py-2 bg-green-600 hover:bg-green-700 text-white rounded-lg font-medium"
+                          >
+                            Завершить тест
+                          </button>
+                        ) : (
+                          <button
+                            onClick={nextQuestion}
+                            className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg"
+                          >
+                            Следующий →
+                          </button>
+                        )}
+                      </div>
+                    </div>
+                  )}
+
+                  {testCompleted && (
+                    <div className="mt-6 text-center py-8">
+                      <div className="w-16 h-16 bg-green-100 rounded-full flex items-center justify-center mx-auto mb-4">
+                        <CheckCircle className="w-8 h-8 text-green-600" />
+                      </div>
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">
+                        Тестирование завершено!
+                      </h3>
+                      <div className="bg-gray-50 rounded-lg p-6 mb-6">
+                        <div className="text-3xl font-bold text-blue-600 mb-2">
+                          {Math.round((testScore / 100) * testQuestions.length)} из {testQuestions.length}
+                        </div>
+                        <div className="text-gray-600 mb-4">
+                          Правильных ответов: {testScore}%
+                        </div>
+                        <div className={`text-lg font-medium ${
+                          testScore >= 50 ? 'text-green-600' : 'text-red-600'
+                        }`}>
+                          {testScore >= 50 ? 'Ответ записан' : 'Нужно повторить материал'}
+                        </div>
+                      </div>
+                      
+                      {testScore >= 50 ? (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => setCurrentSection('practice')}
+                          className="bg-green-600 hover:bg-green-700 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200"
+                        >
+                          Перейти к решению задач
+                        </motion.button>
+                      ) : (
+                        <motion.button
+                          whileHover={{ scale: 1.05 }}
+                          whileTap={{ scale: 0.95 }}
+                          onClick={() => {
+                            setTestCompleted(false);
+                            setCurrentQuestion(0);
+                            setUserAnswers({});
+                            setTestScore(0);
+                          }}
+                          className="bg-blue-600 hover:bg-blue-700 text-white px-6 py-3 rounded-xl font-medium transition-colors duration-200"
+                        >
+                          Пройти тест снова
+                        </motion.button>
+                      )}
+                    </div>
+                  )}
                 </motion.div>
               )}
 
