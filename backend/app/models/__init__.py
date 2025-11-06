@@ -6,7 +6,7 @@ Models are organized by domain and include proper relationships and constraints.
 """
 
 from app.models.user import User
-from app.models.group import Group, group_teachers
+from app.models.group import Group
 from app.models.subject import Subject
 from app.models.lesson import Lesson
 from app.models.lesson_material import LessonMaterial
@@ -14,7 +14,6 @@ from app.models.task import Task
 from app.models.submission import Submission
 from app.models.evaluation import Evaluation
 from app.models.ai_solution import AISolution
-from app.models.quiz import Quiz, QuizQuestion, QuestionType
 
 __all__ = [
     "User",
@@ -26,7 +25,4 @@ __all__ = [
     "Submission",
     "Evaluation",
     "AISolution",
-    "Quiz",
-    "QuizQuestion",
-    "QuestionType"
 ]

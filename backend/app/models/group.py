@@ -8,20 +8,14 @@ Groups are used for intra-group similarity analysis during grading.
 from datetime import datetime
 from typing import List
 
-from sqlalchemy import Column, Integer, String, DateTime, ForeignKey, Table
+from sqlalchemy import Column, Integer, String, DateTime
 from sqlalchemy.orm import relationship
 from sqlalchemy.sql import func
 
 from app.core.database import Base
 
 
-# Association table for many-to-many relationship between groups and teachers
-group_teachers = Table(
-    'group_teachers',
-    Base.metadata,
-    Column('group_id', Integer, ForeignKey('groups.id'), primary_key=True),
-    Column('teacher_id', Integer, ForeignKey('users.id'), primary_key=True)
-)
+
 
 
 class Group(Base):
@@ -45,8 +39,6 @@ class Group(Base):
     
     # Group information
     name = Column(String(255), unique=True, nullable=False, index=True)
-    course = Column(Integer, nullable=True)  # Course number (1, 2, 3, etc.)
-    semester = Column(Integer, nullable=True)  # Semester number (1, 2, etc.)
     
     # Timestamps
     created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
@@ -55,7 +47,6 @@ class Group(Base):
     # Relationships
     # FIXED: Use lazy="selectin" to prevent greenlet errors when accessing relationships in async context
     users = relationship("User", back_populates="group", lazy="selectin")
-    teachers = relationship("User", secondary=group_teachers, lazy="selectin", overlaps="users")
 
     def __repr__(self) -> str:
         return f"<Group(id={self.id}, name='{self.name}')>"
