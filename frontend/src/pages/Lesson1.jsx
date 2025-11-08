@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PlayCircle, ArrowLeft, CheckCircle, Code, FileText, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { startLesson, completeLessonWithScores } from '../utils/auth.js';
 import BackButton from '../components/BackButton.jsx';
 
 const Lesson1 = ({ onPageChange }) => {
@@ -185,6 +186,13 @@ const Lesson1 = ({ onPageChange }) => {
     return () => clearInterval(interval);
   }, [isTestActive, testTimeLeft]);
 
+  // Отслеживание начала урока
+  useEffect(() => {
+    if (user) {
+      startLesson(user.id, 1, 1); // courseId: 1, lessonId: 1
+    }
+  }, [user]);
+
   // Инициализация кода для практики
   useEffect(() => {
     if (currentSection === 'practice' && !practiceCompleted) {
@@ -354,11 +362,14 @@ const Lesson1 = ({ onPageChange }) => {
   };
 
   const saveLessonProgress = () => {
+    const finalTestScore = testScore > 0 ? testScore : Math.round(Math.random() * 40 + 60);
+    const finalPracticeScore = Math.round((practiceAnswers.filter(answer => answer.trim() !== '').length / practiceAnswers.length) * 100);
+    
     const lessonProgress = {
       lessonId: 1,
       completed: true,
-      testScore: testScore > 0 ? testScore : Math.round(Math.random() * 40 + 60),
-      practiceScore: Math.round((practiceAnswers.filter(answer => answer.trim() !== '').length / practiceAnswers.length) * 100),
+      testScore: finalTestScore,
+      practiceScore: finalPracticeScore,
       completedAt: new Date().toISOString()
     };
 
@@ -366,6 +377,11 @@ const Lesson1 = ({ onPageChange }) => {
     const updatedProgress = existingProgress.filter(p => p.lessonId !== 1);
     updatedProgress.push(lessonProgress);
     localStorage.setItem('lessonProgress', JSON.stringify(updatedProgress));
+
+    // Сохраняем данные в журнал
+    if (user) {
+      completeLessonWithScores(user.id, 1, 1, finalTestScore, finalPracticeScore);
+    }
 
     // Обновляем прогресс курса
     const completedLessons = updatedProgress.length;
@@ -401,18 +417,20 @@ const Lesson1 = ({ onPageChange }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
+      <div className="pt-20">
+        <BackButton onClick={() => onPageChange('programming-basics')}>Назад к урокам</BackButton>
+      </div>
+      
+      <div className="container mx-auto px-4 pb-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <BackButton onClick={() => onPageChange('programming-basics')} />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              Урок 1: {lessonData.title}
-            </h1>
-            <p className="text-gray-600 mt-2">
-              {lessonData.video.description}
-            </p>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            Урок 1: {lessonData.title}
+          </h1>
+          <p className="text-gray-600">
+            {lessonData.video.description}
+          </p>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -913,20 +931,6 @@ const Lesson1 = ({ onPageChange }) => {
                 </div>
               </div>
 
-              {/* Quick Actions */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Быстрые действия</h3>
-                <div className="space-y-3">
-                  <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="font-medium text-gray-900">Копировать код</div>
-                    <div className="text-sm text-gray-600">Скопировать примеры кода</div>
-                  </button>
-                  <button className="w-full text-left p-3 bg-gray-50 rounded-lg hover:bg-gray-100 transition-colors">
-                    <div className="font-medium text-gray-900">Открыть теорию</div>
-                    <div className="text-sm text-gray-600">Перейти к теоретическому материалу</div>
-                  </button>
-                </div>
-              </div>
             </div>
           </div>
         </div>

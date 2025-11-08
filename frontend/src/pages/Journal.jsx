@@ -1,8 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { BookOpen, Users, GraduationCap, UserCog, Settings } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import BackButton from '../components/BackButton.jsx';
 import { useLanguage } from '../i18n.jsx';
+import { getTeacherCourses } from '../utils/auth.js';
 import * as XLSX from 'xlsx';
 
 // SVG иконки для действий (просмотр, редактировать, удалить)
@@ -120,25 +121,57 @@ const mockGroups = [
 const Journal = ({ onPageChange }) => {
   const { language, changeLanguage, t } = useLanguage();
   
-  // Определяем админа (через контекст и запасной путь localStorage)
-  let isAdmin = false;
+  // Получаем пользователя
+  let authUser = null;
   try {
-    const { user } = useAuth();
-    isAdmin = user?.role === 'admin';
-  } catch {}
-  if (!isAdmin) {
+    const authContext = useAuth();
+    authUser = authContext.user;
+  } catch (e) {
+    // Игнорируем ошибку
+  }
+  
+  // Определяем админа и преподавателя
+  const [isAdmin, setIsAdmin] = useState(false);
+  const [isTeacher, setIsTeacher] = useState(false);
+  const [currentUser, setCurrentUser] = useState(null);
+  
+  useEffect(() => {
+    let admin = false;
+    let teacher = false;
+    let userData = authUser;
+    
+    // Всегда проверяем localStorage напрямую
     try {
       const raw = localStorage.getItem('educode_current_user');
-      const u = raw ? JSON.parse(raw) : null;
-      if (u?.role === 'admin') isAdmin = true;
-    } catch {}
-  }
+      if (raw) {
+        userData = JSON.parse(raw);
+      }
+    } catch (err) {
+      console.error('Error getting user:', err);
+    }
+    
+    if (userData) {
+      admin = userData.role === 'admin';
+      teacher = userData.role === 'teacher';
+      console.log('Journal - userData:', userData, 'role:', userData.role, 'isTeacher:', teacher);
+    } else {
+      console.log('Journal - NO USER DATA FOUND');
+    }
+    
+    setIsAdmin(admin);
+    setIsTeacher(teacher);
+    setCurrentUser(userData);
+  }, [authUser]);
 
-  const [tab, setTab] = useState('courses');
+  const [tab, setTab] = useState('groups');
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [detailCourse, setDetailCourse] = useState(null);
   const [editCourse, setEditCourse] = useState(null);
   const [deleteCourse, setDeleteCourse] = useState(null);
+  
+  // Состояния для преподавателя
+  const [teacherCourses, setTeacherCourses] = useState([]);
+  const [loadingCourses, setLoadingCourses] = useState(true);
   
   // Единый поиск для всех вкладок
   const [searchQuery, setSearchQuery] = useState('');
@@ -495,9 +528,30 @@ const Journal = ({ onPageChange }) => {
     { id: 'settings', label: t('admin.journal.settings'), icon: Settings },
   ];
 
+  // Меню для преподавателей
+  const teacherSidebarItems = [
+    { id: 'groups', label: 'Группы', icon: Users },
+    { id: 'courses', label: 'Данные курса', icon: BookOpen },
+  ];
+
+  // Загружаем курсы преподавателя
+  useEffect(() => {
+    if (isTeacher && currentUser?.teacherId) {
+      setLoadingCourses(true);
+      try {
+        const courses = getTeacherCourses(currentUser.teacherId);
+        setTeacherCourses(courses);
+      } catch (error) {
+        console.error('Ошибка загрузки курсов:', error);
+      } finally {
+        setLoadingCourses(false);
+      }
+    }
+  }, [isTeacher, currentUser]);
+
   return (
     <div className="bg-white min-h-screen flex">
-      {/* Фиксированное боковое меню */}
+      {/* Фиксированное боковое меню для админа */}
       {isAdmin && (
         <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-gray-200 shadow-sm flex-col p-5 z-30">
           {/* Заголовок */}
@@ -534,7 +588,45 @@ const Journal = ({ onPageChange }) => {
         </aside>
       )}
 
-      {/* Мобильное бургер-меню (скрытое по умолчанию) */}
+      {/* Фиксированное боковое меню для преподавателя */}
+      {isTeacher ? (
+        <aside className="flex fixed top-0 left-0 h-screen w-[240px] bg-white border-r-4 border-blue-500 shadow-2xl flex-col p-5 z-[100]" style={{ top: '80px', height: 'calc(100vh - 80px)' }}>
+          {/* Заголовок */}
+          <div className="mb-6">
+            <h1 className="text-xl font-bold text-blue-600">ЖУРНАЛ</h1>
+            <p className="text-xs text-gray-500 mt-1">Меню преподавателя</p>
+          </div>
+          {/* Навигация */}
+          <nav className="flex-1 flex flex-col gap-1">
+            {teacherSidebarItems.map((item) => {
+              const Icon = item.icon;
+              return (
+                <button
+                  key={item.id}
+                  onClick={() => {
+                    setTab(item.id);
+                    setSearchQuery('');
+                  }}
+                  className={`flex items-center gap-3 py-2 px-3 rounded-md transition-all duration-200 ${
+                    tab === item.id
+                      ? 'bg-gray-100 text-blue-600 font-semibold'
+                      : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                  }`}
+                >
+                  <Icon size={18} />
+                  <span className="text-sm font-medium">{item.label}</span>
+                </button>
+              );
+            })}
+          </nav>
+        </aside>
+      ) : (
+        <div className="fixed top-20 left-4 z-[100] bg-red-500 text-white p-2 rounded text-xs">
+          DEBUG: isTeacher = {String(isTeacher)}
+        </div>
+      )}
+
+      {/* Мобильное бургер-меню для админа (скрытое по умолчанию) */}
       {isAdmin && (
         <>
           <button
@@ -594,13 +686,59 @@ const Journal = ({ onPageChange }) => {
         </>
       )}
 
+      {/* Мобильное бургер-меню для преподавателя */}
+      {isTeacher && (
+        <>
+          <button
+            onClick={() => setMobileMenuOpen(!isMobileMenuOpen)}
+            className="lg:hidden fixed top-20 left-4 z-50 text-gray-600 hover:text-gray-900 text-2xl"
+            aria-label="Меню"
+          >
+            {isMobileMenuOpen ? '✖' : '☰'}
+          </button>
+          {isMobileMenuOpen && (
+            <>
+              <div
+                className="lg:hidden fixed inset-0 bg-black/30 z-40"
+                onClick={() => setMobileMenuOpen(false)}
+              />
+              <aside className="lg:hidden fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-gray-200 shadow-lg flex flex-col p-5 z-50">
+                <nav className="flex-1 flex flex-col gap-1 pt-20">
+                  {teacherSidebarItems.map((item) => {
+                    const Icon = item.icon;
+                    return (
+                      <button
+                        key={item.id}
+                        onClick={() => {
+                          setTab(item.id);
+                          setSearchQuery('');
+                          setMobileMenuOpen(false);
+                        }}
+                        className={`flex items-center gap-3 py-2 px-3 rounded-md transition-all duration-200 ${
+                          tab === item.id
+                            ? 'bg-gray-100 text-blue-600 font-semibold'
+                            : 'text-gray-600 hover:text-blue-600 hover:bg-gray-50'
+                        }`}
+                      >
+                        <Icon size={18} />
+                        <span className="text-sm font-medium">{item.label}</span>
+                      </button>
+                    );
+                  })}
+                </nav>
+              </aside>
+            </>
+          )}
+        </>
+      )}
+
       {/* Основной контент */}
-      <main className={`flex-1 ${isAdmin ? 'lg:ml-[240px]' : ''}`}>
+      <main className={`flex-1 ${(isAdmin || isTeacher) ? 'ml-[240px]' : ''}`}>
         <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
 
         <section className="pt-20 pb-8 px-6">
           <div className="max-w-7xl mx-auto">
-            {!isAdmin && (
+            {!isAdmin && !isTeacher && (
               <div className="mb-2">
                 <h1 className="text-[28px] font-bold text-gray-900">ЖУРНАЛ</h1>
               </div>
@@ -1632,9 +1770,142 @@ const Journal = ({ onPageChange }) => {
               </>
             )}
 
-          {!isAdmin && (
+          {/* Контент для преподавателя */}
+          {isTeacher && (
+            <>
+              <div className="mb-6">
+                <h1 className="text-[28px] font-bold text-gray-900">
+                  {teacherSidebarItems.find(item => item.id === tab)?.label || 'Группы'}
+                </h1>
+              </div>
+
+              {tab === 'groups' && (
+                <div className="bg-white border border-gray-200 rounded-lg p-6">
+                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Группы</h2>
+                  <div className="space-y-4">
+                    {/* Группа ПО2402 */}
+                    <div className="border border-gray-200 rounded-lg p-4">
+                      <h3 className="text-lg font-semibold text-gray-900 mb-3">ПО2402</h3>
+                      <div className="space-y-2">
+                        {/* Студент Алина */}
+                        <div className="bg-gray-50 rounded-lg p-3">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-gray-900">Алина</p>
+                              <p className="text-sm text-gray-600">student@educode.com</p>
+                            </div>
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Активен
+                            </span>
+                          </div>
+                          <div className="mt-2 text-sm text-gray-600">
+                            <p>Курсы: Алгоритмизация и блок-схемы, Администрирование баз данных</p>
+                          </div>
+                        </div>
+                        {/* Другие студенты группы ПО2402 */}
+                        {mockStudents
+                          .filter(s => s.group === 'ПО2402')
+                          .map(student => (
+                            <div key={student.id} className="bg-gray-50 rounded-lg p-3">
+                              <div className="flex items-center justify-between">
+                                <div>
+                                  <p className="font-medium text-gray-900">{student.name}</p>
+                                  <p className="text-sm text-gray-600">{student.email}</p>
+                                </div>
+                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
+                                  student.status === 'Активен' 
+                                    ? 'bg-green-100 text-green-800' 
+                                    : 'bg-gray-100 text-gray-800'
+                                }`}>
+                                  {student.status}
+                                </span>
+                              </div>
+                              <div className="mt-2 text-sm text-gray-600">
+                                <p>Курсы: {student.courseDetails.map(c => c.name).join(', ') || 'Нет курсов'}</p>
+                              </div>
+                            </div>
+                          ))}
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              )}
+
+              {tab === 'courses' && (
+                <div className="space-y-6">
+                  {loadingCourses ? (
+                    <div className="text-center py-12">
+                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
+                      <p className="text-gray-600">Загрузка курсов...</p>
+                    </div>
+                  ) : teacherCourses.length === 0 ? (
+                    <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
+                      <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
+                      <h3 className="text-xl font-semibold text-gray-900 mb-2">У вас пока нет курсов</h3>
+                      <p className="text-gray-600">Курсы будут отображаться здесь</p>
+                    </div>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                      {teacherCourses.map((course) => (
+                        <div
+                          key={course.id}
+                          className="bg-white border border-gray-200 rounded-lg p-6"
+                        >
+                          <div className="flex justify-between items-start mb-4">
+                            <div>
+                              <h3 className="text-xl font-semibold text-gray-900">{course.title}</h3>
+                              <p className="text-gray-600 mt-1">{course.description}</p>
+                              <p className="text-sm text-gray-500 mt-1">Категория: {course.category}</p>
+                            </div>
+                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
+                              Активен
+                            </span>
+                          </div>
+
+                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
+                            <div className="flex items-center gap-1">
+                              <BookOpen className="w-4 h-4" />
+                              {course.lessons.length} уроков
+                            </div>
+                            <div className="flex items-center gap-1">
+                              <Users className="w-4 h-4" />
+                              {course.studentsCount || 0} студентов
+                            </div>
+                          </div>
+
+                          {/* Список уроков */}
+                          <div className="mb-4">
+                            <h4 className="text-sm font-medium text-gray-700 mb-2">Уроки:</h4>
+                            <div className="space-y-2">
+                              {course.lessons.map((lesson) => (
+                                <div key={lesson.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
+                                  <div className="flex items-center gap-2">
+                                    <div className={`w-2 h-2 rounded-full ${lesson.isCompleted ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                                    <span className="text-sm text-gray-700">{lesson.title}</span>
+                                  </div>
+                                </div>
+                              ))}
+                            </div>
+                          </div>
+
+                          <button
+                            onClick={() => onPageChange && onPageChange('journal-detail')}
+                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
+                          >
+                            Просмотреть детали
+                          </button>
+                        </div>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              )}
+            </>
+          )}
+
+          {!isAdmin && !isTeacher && (
             <div className="bg-white border rounded-xl shadow p-8 text-center text-gray-700 mt-8">
-              Обычный журнал для студентов/преподавателей (админ-вкладки скрыты).
+              Обычный журнал для студентов (админ-вкладки скрыты).
             </div>
           )}
           </div>

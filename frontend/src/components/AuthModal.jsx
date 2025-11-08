@@ -105,6 +105,9 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
       fullName: '',
       confirmPassword: ''
     });
+    // Сбрасываем валидацию пароля при смене режима
+    setPasswordStrength('');
+    setPasswordMessage('');
   }, [type]);
 
   // Обработка изменения полей формы
@@ -115,7 +118,14 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
     
     if (field === 'password') {
       setPassword(value);
-      validatePassword(value);
+      // Валидация пароля только при регистрации
+      if (mode === 'register') {
+        validatePassword(value);
+      } else {
+        // При входе сбрасываем валидацию
+        setPasswordStrength('');
+        setPasswordMessage('');
+      }
     }
   };
 
@@ -139,7 +149,7 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
           onPageChange('courses');
         }, 1500);
       } else {
-        setError(result.error);
+        setError(result.error || 'Неправильный пароль');
       }
     } else {
       // Регистрация
@@ -201,6 +211,9 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
   const toggleMode = () => {
     const newMode = mode === 'login' ? 'register' : 'login';
     setMode(newMode);
+    // Сбрасываем валидацию пароля при переключении режима
+    setPasswordStrength('');
+    setPasswordMessage('');
     onSwitchModal(newMode === 'login' ? 'login' : 'signup');
   };
 
@@ -331,9 +344,9 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
                              onPaste={(e) => e.preventDefault()}
                              onCut={(e) => e.preventDefault()}
                              className={`w-full px-4 py-3 pr-12 rounded-lg border focus:outline-none focus:ring-2 focus:border-transparent bg-white ${
-                               passwordStrength === 'weak' ? 'border-red-500 focus:ring-red-500' :
-                               passwordStrength === 'medium' ? 'border-yellow-500 focus:ring-yellow-500' :
-                               passwordStrength === 'strong' ? 'border-green-500 focus:ring-green-500' :
+                               mode === 'register' && passwordStrength === 'weak' ? 'border-red-500 focus:ring-red-500' :
+                               mode === 'register' && passwordStrength === 'medium' ? 'border-yellow-500 focus:ring-yellow-500' :
+                               mode === 'register' && passwordStrength === 'strong' ? 'border-green-500 focus:ring-green-500' :
                                'border-gray-300 focus:ring-blue-500'
                              }`}
                              required
@@ -346,7 +359,8 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
                       <Eye className="w-5 h-5" />
                     </button>
                   </div>
-                  {passwordMessage && (
+                  {/* Показываем сообщение о силе пароля только при регистрации */}
+                  {mode === 'register' && passwordMessage && (
                     <p className={`text-sm mt-1 ${
                       passwordStrength === 'weak' ? 'text-red-500' :
                       passwordStrength === 'medium' ? 'text-yellow-500' :

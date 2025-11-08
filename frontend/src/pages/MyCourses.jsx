@@ -225,7 +225,7 @@ const MyCourses = ({ onPageChange }) => {
       <BackButton onClick={() => onPageChange && onPageChange('home')}>Назад к главной</BackButton>
       
       {/* Hero Section */}
-      <section className="pt-20 sm:pt-24 md:pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
+      <section className="pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
         <div className="max-w-6xl mx-auto">
 
           <motion.div
@@ -354,7 +354,7 @@ const MyCourses = ({ onPageChange }) => {
 
       {/* Lessons View */}
       {currentCourse && !currentLesson && (
-        <section className="pt-20 sm:pt-24 md:pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
+        <section className="pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
           <div className="max-w-4xl mx-auto">
             {/* Back Button */}
             <motion.div
@@ -441,7 +441,7 @@ const MyCourses = ({ onPageChange }) => {
 
       {/* Lesson View */}
       {currentLesson && (
-        <section className="pt-20 sm:pt-24 md:pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
+        <section className="pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">
           <div className="max-w-4xl mx-auto">
             {/* Back Button */}
             <BackButton onClick={handleBackToLessons}>Назад к урокам</BackButton>

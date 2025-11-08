@@ -3,7 +3,7 @@ import { motion } from 'framer-motion';
 import { BookOpen, PlayCircle, ArrowLeft, Lock, CheckCircle, Code, FileText } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { isLessonUnlocked, isLessonCompleted } from '../utils/auth.js';
+import { isLessonUnlocked, isLessonCompleted, getCourseJournal } from '../utils/auth.js';
 import BackButton from '../components/BackButton.jsx';
 import ResultsBlock from '../components/ResultsBlock.jsx';
 import CodeRunner from '../components/CodeRunner.jsx';
@@ -77,7 +77,13 @@ const ProgrammingBasics = ({ onPageChange }) => {
     const savedProgress = JSON.parse(localStorage.getItem('lessonProgress') || '[]');
     const savedCourseProgress = JSON.parse(localStorage.getItem('courseProgress') || '{"progress": 0}');
     
-    console.log('Загружаем прогресс:', { savedProgress, savedCourseProgress });
+    // Загружаем данные из журнала
+    let journalData = {};
+    if (user) {
+      journalData = getCourseJournal(user.id, 1);
+    }
+    
+    console.log('Загружаем прогресс:', { savedProgress, savedCourseProgress, journalData });
     
     setCourseProgress(savedCourseProgress.progress || 0);
     
@@ -92,12 +98,18 @@ const ProgrammingBasics = ({ onPageChange }) => {
         }
         
         const progress = savedProgress.find(p => p.lessonId === lesson.id);
-        if (progress) {
+        const journalEntry = journalData[lesson.id];
+        
+        // Приоритет: данные из журнала, затем из прогресса
+        const testScore = journalEntry?.testGrade ?? progress?.testScore ?? null;
+        const practiceScore = journalEntry?.taskGrade ?? progress?.practiceScore ?? null;
+        
+        if (progress || journalEntry) {
           return {
             ...lesson,
-            completed: progress.completed,
-            testScore: progress.testScore,
-            practiceScore: progress.practiceScore,
+            completed: progress?.completed || journalEntry?.endDate ? true : false,
+            testScore: testScore,
+            practiceScore: practiceScore,
             locked: shouldBeLocked
           };
         }
@@ -116,7 +128,7 @@ const ProgrammingBasics = ({ onPageChange }) => {
         setAnimateProgress(false);
       }, 2000); // Задержка для начальной анимации
     }
-  }, []);
+  }, [user]);
 
   const handleLessonClick = (lesson) => {
     if (lesson.locked) {
@@ -179,7 +191,7 @@ const ProgrammingBasics = ({ onPageChange }) => {
   };
 
   const handleBackToLessons = () => {
-    onPageChange('my-courses');
+    onPageChange('courses');
   };
 
   const handleTaskComplete = (taskIndex, result) => {
@@ -286,18 +298,20 @@ const ProgrammingBasics = ({ onPageChange }) => {
 
   return (
     <div className="min-h-screen bg-gray-50">
-      <div className="container mx-auto px-4 py-8">
+      {/* Back Button */}
+      <div className="pt-20">
+        <BackButton onClick={handleBackToLessons}>Назад к курсам</BackButton>
+      </div>
+      
+      <div className="container mx-auto px-4 pb-8">
         {/* Header */}
-        <div className="flex items-center gap-4 mb-8">
-          <BackButton onClick={handleBackToLessons} />
-          <div>
-            <h1 className="text-2xl font-bold text-gray-900">
-              ПМ02 - Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения
-            </h1>
-            <p className="text-gray-600 mt-2">
-              Изучите основы программирования и алгоритмизации
-            </p>
-          </div>
+        <div className="text-center mb-8">
+          <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
+            ПМ02 - Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения
+          </h1>
+          <p className="text-gray-600">
+            Изучите основы программирования и алгоритмизации
+          </p>
         </div>
 
         {/* Progress Bar */}
@@ -324,118 +338,94 @@ const ProgrammingBasics = ({ onPageChange }) => {
           </div>
         </div>
 
-        {/* Lessons Grid */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+        {/* Lessons List */}
+        <div className="space-y-4">
           {lessons.map((lesson, index) => (
             <motion.div
               key={lesson.id}
-              initial={{ opacity: 0, y: 30 }}
+              initial={{ opacity: 0, y: 20 }}
               animate={{ opacity: 1, y: 0 }}
               transition={{ duration: 0.5, delay: index * 0.1 }}
-              className={`bg-white rounded-xl shadow-sm border border-gray-200 p-6 cursor-pointer transition-all duration-200 ${
+              className={`bg-white rounded-lg border border-gray-200 p-4 transition-all duration-200 ${
                 lesson.locked 
-                  ? 'opacity-60 cursor-not-allowed' 
-                  : 'hover:shadow-md hover:border-blue-300'
+                  ? 'opacity-60' 
+                  : 'hover:shadow-sm cursor-pointer'
               }`}
-              onClick={() => handleLessonClick(lesson)}
+              onClick={() => !lesson.locked && handleLessonClick(lesson)}
             >
-              <div className="flex items-start justify-between mb-4">
-                <div className="flex items-center gap-3">
+              <div className="flex items-center justify-between gap-4">
+                {/* Left side: Icon and content */}
+                <div className="flex items-center gap-4 flex-1 min-w-0">
+                  {/* Icon */}
                   {lesson.locked ? (
-                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-gray-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <Lock className="w-5 h-5 text-gray-400" />
                     </div>
                   ) : lesson.completed ? (
-                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-green-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <CheckCircle className="w-5 h-5 text-green-600" />
                     </div>
                   ) : (
-                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center">
+                    <div className="w-10 h-10 bg-blue-100 rounded-lg flex items-center justify-center flex-shrink-0">
                       <BookOpen className="w-5 h-5 text-blue-600" />
                     </div>
                   )}
-                  <div>
-                    <h3 className="text-lg font-semibold text-gray-900">
-                      Урок {lesson.id}
+                  
+                  {/* Content */}
+                  <div className="flex-1 min-w-0">
+                    <h3 className="text-lg font-semibold text-gray-900 mb-1">
+                      Урок {lesson.id} — {lesson.title}
                     </h3>
-                    <p className="text-sm text-gray-600">
-                      {lesson.title}
+                    <p className="text-sm text-gray-600 mb-2">
+                      {lesson.description}
                     </p>
+                    <div className="flex items-center gap-4 text-xs text-gray-500">
+                      <div className="flex items-center gap-1">
+                        <FileText className="w-3 h-3" />
+                        <span>Тестирование</span>
+                        {lesson.testScore !== null && lesson.testScore !== undefined && (
+                          <span className="text-blue-600 font-medium ml-1">{lesson.testScore}%</span>
+                        )}
+                      </div>
+                      <span>|</span>
+                      <div className="flex items-center gap-1">
+                        <Code className="w-3 h-3" />
+                        <span>Решение задач</span>
+                        {lesson.practiceScore !== null && lesson.practiceScore !== undefined && (
+                          <span className="text-green-600 font-medium ml-1">{lesson.practiceScore}%</span>
+                        )}
+                      </div>
+                    </div>
                   </div>
                 </div>
-                {lesson.locked && (
-                  <Lock className="w-5 h-5 text-gray-400" />
-                )}
-              </div>
 
-              <p className="text-gray-700 mb-4 leading-relaxed">
-                {lesson.description}
-              </p>
-
-              {/* Lesson Progress */}
-              <div className="space-y-3">
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <FileText className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-600">Тестирование</span>
-                  </div>
-                  {lesson.testScore !== null && (
-                    <span className="font-medium text-blue-600">
-                      {lesson.testScore}%
-                    </span>
-                  )}
+                {/* Right side: Button */}
+                <div className="flex-shrink-0">
+                  <motion.button
+                    className={`px-4 py-2 rounded-lg font-medium text-sm transition-colors whitespace-nowrap ${
+                      lesson.locked
+                        ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
+                        : lesson.completed
+                        ? 'bg-green-600 hover:bg-green-700 text-white'
+                        : 'bg-blue-600 hover:bg-blue-700 text-white'
+                    }`}
+                    whileHover={!lesson.locked ? { scale: 1.02 } : {}}
+                    whileTap={!lesson.locked ? { scale: 0.98 } : {}}
+                    disabled={lesson.locked}
+                    onClick={(e) => {
+                      e.stopPropagation();
+                      if (!lesson.locked) {
+                        handleLessonClick(lesson);
+                      }
+                    }}
+                  >
+                    {lesson.locked ? 'Заблокировано' : lesson.completed ? 'Повторить' : 'Начать урок'}
+                  </motion.button>
                 </div>
-                
-                <div className="flex items-center justify-between text-sm">
-                  <div className="flex items-center gap-2">
-                    <Code className="w-4 h-4 text-gray-500" />
-                    <span className="text-gray-600">Решение задач</span>
-                  </div>
-                  {lesson.practiceScore !== null && (
-                    <span className="font-medium text-green-600">
-                      {lesson.practiceScore}%
-                    </span>
-                  )}
-                </div>
-              </div>
-
-              <div className="mt-6 pt-4 border-t border-gray-100">
-                <motion.button
-                  className={`w-full py-2 px-4 rounded-lg font-medium transition-colors ${
-                    lesson.locked
-                      ? 'bg-gray-100 text-gray-400 cursor-not-allowed'
-                      : lesson.completed
-                      ? 'bg-green-600 hover:bg-green-700 text-white'
-                      : 'bg-blue-600 hover:bg-blue-700 text-white'
-                  }`}
-                  whileHover={!lesson.locked ? { scale: 1.02 } : {}}
-                  whileTap={!lesson.locked ? { scale: 0.98 } : {}}
-                  disabled={lesson.locked}
-                >
-                  {lesson.locked ? 'Заблокировано' : lesson.completed ? 'Повторить' : 'Начать урок'}
-                </motion.button>
               </div>
             </motion.div>
           ))}
         </div>
-
-        {/* Empty State */}
-        <motion.div
-          initial={{ opacity: 0, y: 30 }}
-          animate={{ opacity: 1, y: 0 }}
-          transition={{ duration: 0.8, delay: 0.4 }}
-          className="text-center mt-12"
-        >
-          <div className="bg-white rounded-xl shadow-lg p-8 max-w-md mx-auto">
-            <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h3 className="text-xl font-semibold text-gray-900 mb-2">
-              Больше курсов скоро!
-            </h3>
-            <p className="text-gray-600">
-              Мы работаем над добавлением новых курсов и материалов.
-            </p>
-          </div>
-        </motion.div>
       </div>
     </div>
   );

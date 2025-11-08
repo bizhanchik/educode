@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { PlayCircle, ArrowLeft, CheckCircle, Code, FileText, Clock, ChevronLeft, ChevronRight } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { startLesson, completeLessonWithScores } from '../utils/auth.js';
 import BackButton from '../components/BackButton.jsx';
 
 const Lesson2 = ({ onPageChange }) => {
@@ -197,6 +198,13 @@ const Lesson2 = ({ onPageChange }) => {
     return () => clearInterval(interval);
   }, [isTestActive, testTimeLeft]);
 
+  // Отслеживание начала урока
+  useEffect(() => {
+    if (user) {
+      startLesson(user.id, 1, 2); // courseId: 1, lessonId: 2
+    }
+  }, [user]);
+
   // Инициализация кода для практики
   useEffect(() => {
     if (currentSection === 'practice' && !practiceCompleted) {
@@ -366,11 +374,14 @@ const Lesson2 = ({ onPageChange }) => {
   };
 
   const saveLessonProgress = () => {
+    const finalTestScore = testScore > 0 ? testScore : Math.round(Math.random() * 40 + 60);
+    const finalPracticeScore = Math.round((practiceAnswers.filter(answer => answer.trim() !== '').length / practiceAnswers.length) * 100);
+    
     const lessonProgress = {
       lessonId: 2,
       completed: true,
-      testScore: testScore > 0 ? testScore : Math.round(Math.random() * 40 + 60),
-      practiceScore: Math.round((practiceAnswers.filter(answer => answer.trim() !== '').length / practiceAnswers.length) * 100),
+      testScore: finalTestScore,
+      practiceScore: finalPracticeScore,
       completedAt: new Date().toISOString()
     };
 
@@ -378,6 +389,11 @@ const Lesson2 = ({ onPageChange }) => {
     const updatedProgress = existingProgress.filter(p => p.lessonId !== 2);
     updatedProgress.push(lessonProgress);
     localStorage.setItem('lessonProgress', JSON.stringify(updatedProgress));
+
+    // Сохраняем данные в журнал
+    if (user) {
+      completeLessonWithScores(user.id, 1, 2, finalTestScore, finalPracticeScore);
+    }
 
     // Обновляем прогресс курса
     const completedLessons = updatedProgress.length;

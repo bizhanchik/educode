@@ -6,6 +6,7 @@ const NOTIFICATIONS_DB = 'educode_notifications';
 const SUBMISSIONS_DB = 'educode_submissions';
 const PROGRESS_DB = 'educode_progress';
 const GRADES_DB = 'educode_grades';
+const JOURNAL_DB = 'educode_journal';
 
 // Предустановленные пользователи для тестирования
 const DEFAULT_USERS = [
@@ -46,6 +47,15 @@ const DEFAULT_USERS = [
   },
   {
     id: 5,
+    email: 'teacher@educode.com',
+    password: 'teacher123',
+    fullName: 'Преподаватель',
+    role: 'teacher',
+    teacherId: 'teacher_main',
+    createdAt: new Date().toISOString()
+  },
+  {
+    id: 6,
     email: 'student@educode.com',
     password: 'student123',
     fullName: 'Алина',
@@ -232,6 +242,19 @@ export const initDatabase = () => {
   if (!existingUsers) {
     localStorage.setItem(USERS_DB, JSON.stringify(DEFAULT_USERS));
     console.log('📊 База данных пользователей инициализирована');
+  } else {
+    // Обновляем список пользователей, добавляя новых из DEFAULT_USERS
+    const users = JSON.parse(existingUsers);
+    const existingEmails = users.map(u => u.email);
+    
+    DEFAULT_USERS.forEach(defaultUser => {
+      if (!existingEmails.includes(defaultUser.email)) {
+        users.push(defaultUser);
+        console.log(`✅ Добавлен новый пользователь: ${defaultUser.email}`);
+      }
+    });
+    
+    localStorage.setItem(USERS_DB, JSON.stringify(users));
   }
 
   const existingCourses = localStorage.getItem(COURSES_DB);
@@ -758,4 +781,71 @@ export const isLessonUnlocked = (userId, courseId, lessonId) => {
 export const isLessonCompleted = (userId, courseId, lessonId) => {
   const lessonProgress = getLessonProgress(userId, courseId, lessonId);
   return lessonProgress.completed;
+};
+
+// Функции для работы с журналом
+export const saveJournalEntry = (userId, courseId, lessonId, data) => {
+  const journal = localStorage.getItem(JOURNAL_DB);
+  const journalData = journal ? JSON.parse(journal) : {};
+  
+  if (!journalData[userId]) {
+    journalData[userId] = {};
+  }
+  
+  if (!journalData[userId][courseId]) {
+    journalData[userId][courseId] = {};
+  }
+  
+  const existingEntry = journalData[userId][courseId][lessonId] || {};
+  
+  journalData[userId][courseId][lessonId] = {
+    ...existingEntry,
+    ...data,
+    updatedAt: new Date().toISOString()
+  };
+  
+  localStorage.setItem(JOURNAL_DB, JSON.stringify(journalData));
+  return { success: true };
+};
+
+export const getJournalEntry = (userId, courseId, lessonId) => {
+  const journal = localStorage.getItem(JOURNAL_DB);
+  const journalData = journal ? JSON.parse(journal) : {};
+  return journalData[userId]?.[courseId]?.[lessonId] || null;
+};
+
+export const getCourseJournal = (userId, courseId) => {
+  const journal = localStorage.getItem(JOURNAL_DB);
+  const journalData = journal ? JSON.parse(journal) : {};
+  return journalData[userId]?.[courseId] || {};
+};
+
+// Сохранение даты начала урока
+export const startLesson = (userId, courseId, lessonId) => {
+  const startDate = new Date();
+  return saveJournalEntry(userId, courseId, lessonId, {
+    startDate: startDate.toISOString(),
+    startDateFormatted: formatDate(startDate)
+  });
+};
+
+// Сохранение результатов урока (дата окончания и баллы)
+export const completeLessonWithScores = (userId, courseId, lessonId, testScore, practiceScore) => {
+  const endDate = new Date();
+  const averageScore = Math.round((testScore + practiceScore) / 2);
+  
+  return saveJournalEntry(userId, courseId, lessonId, {
+    endDate: endDate.toISOString(),
+    endDateFormatted: formatDate(endDate),
+    testGrade: testScore,
+    taskGrade: practiceScore,
+    averageGrade: averageScore
+  });
+};
+
+// Форматирование даты в формат DD.MM
+const formatDate = (date) => {
+  const day = String(date.getDate()).padStart(2, '0');
+  const month = String(date.getMonth() + 1).padStart(2, '0');
+  return `${day}.${month}`;
 };

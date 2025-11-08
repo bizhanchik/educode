@@ -13,7 +13,9 @@ import {
   CheckCircle,
   XCircle,
   Save,
-  Trash2
+  Trash2,
+  UserCog,
+  GraduationCap
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import { useLanguage } from '../i18n.jsx';
@@ -22,7 +24,7 @@ import { getTeacherCourses, updateCourse } from '../utils/auth.js';
 const TeacherDashboard = ({ onPageChange }) => {
   const { t } = useLanguage();
   const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('courses');
+  const [currentView, setCurrentView] = useState('groups');
   const [loading, setLoading] = useState(true);
   const [courses, setCourses] = useState([]);
   const [editingCourse, setEditingCourse] = useState(null);
@@ -111,28 +113,24 @@ const TeacherDashboard = ({ onPageChange }) => {
   };
 
   const teacherNavItems = [
-    { id: 'courses', label: 'Мои курсы', icon: BookOpen },
-    { id: 'create-course', label: 'Создать курс', icon: Plus },
-    { id: 'assignments', label: 'Задания студентов', icon: Users },
-    { id: 'notifications', label: 'Уведомления', icon: Bell, count: 2 },
-    { id: 'results', label: 'Результаты студентов', icon: BarChart3 },
-    { id: 'settings', label: 'Настройки', icon: Settings },
+    { id: 'groups', label: 'Группы', icon: Users },
+    { id: 'courses', label: 'Данные курса', icon: BookOpen },
     { id: 'logout', label: 'Выйти', icon: LogOut },
   ];
+
+  const renderGroups = () => (
+    <div className="space-y-6">
+      <h2 className="text-2xl font-bold text-gray-900">Группы</h2>
+      <div className="bg-white rounded-lg shadow-md p-6">
+        <p className="text-gray-600">Список групп будет здесь</p>
+      </div>
+    </div>
+  );
 
   const renderCourses = () => (
     <div className="space-y-6">
       <div className="flex justify-between items-center">
-        <h2 className="text-2xl font-bold text-gray-900">Мои курсы</h2>
-        <motion.button
-          onClick={() => setCurrentView('create-course')}
-          className="px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors flex items-center gap-2"
-          whileHover={{ scale: 1.05 }}
-          whileTap={{ scale: 0.95 }}
-        >
-          <Plus className="w-4 h-4" />
-          Создать курс
-        </motion.button>
+        <h2 className="text-2xl font-bold text-gray-900">Данные курса</h2>
       </div>
 
       {loading ? (
@@ -376,51 +374,19 @@ const TeacherDashboard = ({ onPageChange }) => {
 
   const renderContent = () => {
     switch (currentView) {
+      case 'groups':
+        return renderGroups();
       case 'courses':
         return renderCourses();
       case 'add-lesson':
         return renderAddLesson();
-      case 'notifications':
-        return renderNotifications();
-      case 'create-course':
-        return (
-          <div className="text-center py-12">
-            <Plus className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Создать курс</h2>
-            <p className="text-gray-600">Здесь будет форма создания курса</p>
-          </div>
-        );
-      case 'assignments':
-        return (
-          <div className="text-center py-12">
-            <Users className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Задания студентов</h2>
-            <p className="text-gray-600">Здесь будут задания от студентов</p>
-          </div>
-        );
-      case 'results':
-        return (
-          <div className="text-center py-12">
-            <BarChart3 className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Результаты студентов</h2>
-            <p className="text-gray-600">Здесь будут графики и статистика</p>
-          </div>
-        );
-      case 'settings':
-        return (
-          <div className="text-center py-12">
-            <Settings className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-            <h2 className="text-2xl font-bold text-gray-900 mb-2">Настройки</h2>
-            <p className="text-gray-600">Здесь будут настройки профиля</p>
-          </div>
-        );
       default:
-        return renderCourses();
+        return renderGroups();
     }
   };
 
   return (
-    <section className="min-h-screen bg-gray-50 pt-20 sm:pt-24 md:pt-28 pb-12 px-4 sm:px-6 md:px-8">
+    <section className="min-h-screen bg-gray-50 pt-20 pb-12 px-4 sm:px-6 md:px-8">
       <div className="max-w-7xl mx-auto">
         {/* Header */}
         <div className="mb-8">
@@ -440,13 +406,13 @@ const TeacherDashboard = ({ onPageChange }) => {
           </div>
         </div>
 
-        <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
           {/* Sidebar Navigation */}
           <motion.div
             initial={{ opacity: 0, x: -20 }}
             animate={{ opacity: 1, x: 0 }}
             transition={{ duration: 0.6, delay: 0.2 }}
-            className="lg:col-span-1 bg-white rounded-lg shadow-md p-6 h-fit"
+            className="md:col-span-1 bg-white rounded-lg shadow-md p-6 h-fit"
           >
             <h2 className="text-xl font-semibold text-gray-800 mb-4">Навигация</h2>
             <ul className="space-y-2">
@@ -479,7 +445,7 @@ const TeacherDashboard = ({ onPageChange }) => {
             initial={{ opacity: 0, y: 20 }}
             animate={{ opacity: 1, y: 0 }}
             transition={{ duration: 0.6, delay: 0.4 }}
-            className="lg:col-span-3"
+            className="md:col-span-3"
           >
             {renderContent()}
           </motion.div>

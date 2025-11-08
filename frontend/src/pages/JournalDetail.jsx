@@ -1,6 +1,7 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import BackButton from '../components/BackButton.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { getCourseJournal } from '../utils/auth.js';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
 
@@ -39,73 +40,18 @@ const JournalDetail = ({ onPageChange, courseId }) => {
     }
   };
 
-  const topics = {
-    1: [
-      {
-        id: 1,
-        topicName: 'Введение в языки программирования. Классификация языков программирования. Язык программирования Python. Выбор среды разработки.',
-        testStartDate: '05.09',
-        testEndDate: '08.09',
-        testGrade: 95,
-        taskGrade: 90,
-        averageGrade: 93
-      },
-      {
-        id: 2,
-        topicName: 'Условные конструкции языка программирования Python',
-        testStartDate: '12.09',
-        testEndDate: '15.09',
-        testGrade: 88,
-        taskGrade: 85,
-        averageGrade: 87
-      },
-      {
-        id: 3,
-        topicName: 'Практическая работа №1. «Условные конструкции Python»',
-        testStartDate: '19.09',
-        testEndDate: '22.09',
-        testGrade: 92,
-        taskGrade: 88,
-        averageGrade: 90
-      },
-      {
-        id: 4,
-        topicName: 'Цикличные конструкции FOR, WHILE в языке программирования Python',
-        testStartDate: '26.09',
-        testEndDate: '29.09',
-        testGrade: 87,
-        taskGrade: 90,
-        averageGrade: 89
-      },
-      {
-        id: 5,
-        topicName: 'Практическая работа №2. Циклические конструкции',
-        testStartDate: '03.10',
-        testEndDate: '06.10',
-        testGrade: 90,
-        taskGrade: 95,
-        averageGrade: 93
-      },
-      {
-        id: 6,
-        topicName: 'Строки в Python и обработка текстовой информации',
-        testStartDate: '10.10',
-        testEndDate: '13.10',
-        testGrade: 94,
-        taskGrade: 92,
-        averageGrade: 93
-      },
-      {
-        id: 7,
-        topicName: 'Функции и параметры функций',
-        testStartDate: '17.10',
-        testEndDate: '20.10',
-        testGrade: 93,
-        taskGrade: 91,
-        averageGrade: 92
-      }
-    ]
+  // Названия уроков для отображения
+  const lessonNames = {
+    1: 'Введение в языки программирования. Классификация языков программирования. Язык программирования Python. Выбор среды разработки.',
+    2: 'Переменные и типы данных',
+    3: 'Практическая работа №1. «Условные конструкции Python»',
+    4: 'Цикличные конструкции FOR, WHILE в языке программирования Python',
+    5: 'Практическая работа №2. Циклические конструкции',
+    6: 'Строки в Python и обработка текстовой информации',
+    7: 'Функции и параметры функций'
   };
+
+  const [courseTopics, setCourseTopics] = useState([]);
 
   // Safe auth access
   let user = null;
@@ -118,24 +64,39 @@ const JournalDetail = ({ onPageChange, courseId }) => {
 
   const course = courses[courseId] || courses[1];
 
-  // Admin-only overrides: stored per user and course
-  const getAdminOverrides = () => {
-    if (!user || user.role !== 'admin') return null;
-    try {
-      const key = `journal_admin_overrides_${user.id}_${course.id}`;
-      const raw = localStorage.getItem(key);
-      if (!raw) return null;
-      const parsed = JSON.parse(raw);
-      if (Array.isArray(parsed)) return parsed;
-      return null;
-    } catch (_) {
-      return null;
+  // Загружаем данные из журнала
+  useEffect(() => {
+    if (user) {
+      const journalData = getCourseJournal(user.id, courseId || 1);
+      
+      // Преобразуем данные журнала в формат для отображения
+      // Показываем только те уроки, которые были начаты (есть startDate) или завершены
+      const topicsList = Object.keys(lessonNames)
+        .map(lessonId => {
+          const entry = journalData[lessonId];
+          // Показываем урок только если он был начат (есть startDate) или завершен
+          if (!entry || (!entry.startDate && !entry.endDate)) {
+            return null;
+          }
+          
+          return {
+            id: parseInt(lessonId),
+            topicName: lessonNames[lessonId],
+            testStartDate: entry?.startDateFormatted || '-',
+            testEndDate: entry?.endDateFormatted || '-',
+            testGrade: entry?.testGrade || null,
+            taskGrade: entry?.taskGrade || null,
+            averageGrade: entry?.averageGrade || null
+          };
+        })
+        .filter(topic => topic !== null); // Убираем null значения
+      
+      setCourseTopics(topicsList);
+    } else {
+      // Если пользователь не залогинен, показываем пустой список
+      setCourseTopics([]);
     }
-  };
-
-  const adminOverrides = getAdminOverrides();
-  const baseTopics = topics[courseId] || topics[1];
-  const courseTopics = (user && user.role === 'admin' && adminOverrides) ? adminOverrides : baseTopics;
+  }, [user, courseId]);
 
   return (
     <div className="bg-white min-h-screen">
@@ -155,32 +116,39 @@ const JournalDetail = ({ onPageChange, courseId }) => {
           {/* Semester Selector removed */}
 
           {/* Topics Table */}
-          <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
-            <table className="w-full border-collapse">
-              <thead className="bg-gray-50">
-                <tr>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                    №
-                  </th>
-                  <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border border-gray-200">
-                    Название темы
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                    Даты проведения
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                    Оценка тестирования
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                    Оценка решения задач
-                  </th>
-                  <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                    Средний балл
-                  </th>
-                </tr>
-              </thead>
-              <tbody>
-                {courseTopics.map((topic) => (
+          {courseTopics.length === 0 ? (
+            <div className="bg-white border border-gray-200 rounded-lg p-12 text-center">
+              <p className="text-gray-600 text-lg">
+                Пока нет пройденных уроков. Начните изучение курса, чтобы увидеть результаты здесь.
+              </p>
+            </div>
+          ) : (
+            <div className="bg-white border border-gray-200 rounded-lg overflow-hidden">
+              <table className="w-full border-collapse">
+                <thead className="bg-gray-50">
+                  <tr>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
+                      №
+                    </th>
+                    <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border border-gray-200">
+                      Название темы
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
+                      Даты проведения
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
+                      Оценка тестирования
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
+                      Оценка решения задач
+                    </th>
+                    <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
+                      Средний балл
+                    </th>
+                  </tr>
+                </thead>
+                <tbody>
+                  {courseTopics.map((topic) => (
                   <tr key={topic.id} className="hover:bg-gray-50">
                     <td className="px-4 py-4 text-center text-sm text-gray-900 border border-gray-200">
                       {topic.id}
@@ -189,31 +157,34 @@ const JournalDetail = ({ onPageChange, courseId }) => {
                       {topic.topicName}
                     </td>
                     <td className="px-4 py-4 text-center text-sm text-gray-900 border border-gray-200">
-                      {topic.testStartDate} - {topic.testEndDate}
+                      {topic.testStartDate && topic.testEndDate && topic.testStartDate !== '-' && topic.testEndDate !== '-' 
+                        ? `${topic.testStartDate} - ${topic.testEndDate}` 
+                        : topic.testStartDate !== '-' ? topic.testStartDate : '-'}
                     </td>
                     <td
                       className="px-4 py-4 text-center text-sm text-gray-900 border border-gray-200"
-                      title={`${toUsGrade(topic.testGrade).letter} • GPA ${toUsGrade(topic.testGrade).gpa.toFixed(1)}`}
+                      title={topic.testGrade ? `${toUsGrade(topic.testGrade).letter} • GPA ${toUsGrade(topic.testGrade).gpa.toFixed(1)}` : ''}
                     >
-                      {topic.testGrade}
+                      {topic.testGrade !== null ? topic.testGrade : '-'}
                     </td>
                     <td
                       className="px-4 py-4 text-center text-sm text-gray-900 border border-gray-200"
-                      title={`${toUsGrade(topic.taskGrade).letter} • GPA ${toUsGrade(topic.taskGrade).gpa.toFixed(1)}`}
+                      title={topic.taskGrade ? `${toUsGrade(topic.taskGrade).letter} • GPA ${toUsGrade(topic.taskGrade).gpa.toFixed(1)}` : ''}
                     >
-                      {topic.taskGrade}
+                      {topic.taskGrade !== null ? topic.taskGrade : '-'}
                     </td>
                     <td
                       className="px-4 py-4 text-center text-sm font-medium text-gray-900 border border-gray-200"
-                      title={`${toUsGrade(topic.averageGrade).letter} • GPA ${toUsGrade(topic.averageGrade).gpa.toFixed(1)}`}
+                      title={topic.averageGrade ? `${toUsGrade(topic.averageGrade).letter} • GPA ${toUsGrade(topic.averageGrade).gpa.toFixed(1)}` : ''}
                     >
-                      {topic.averageGrade}
+                      {topic.averageGrade !== null ? topic.averageGrade : '-'}
                     </td>
                   </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+                  ))}
+                </tbody>
+              </table>
+            </div>
+          )}
 
           {/* Legend removed per request */}
         </div>

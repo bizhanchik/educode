@@ -106,6 +106,13 @@ const UserMenu = ({ onPageChange }) => {
     setIsOpen(false);
   };
 
+  const handleTeacherDashboard = () => {
+    if (onPageChange) {
+      onPageChange('teacher-dashboard');
+    }
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative" ref={menuRef}>
       {/* Кнопка пользователя */}
