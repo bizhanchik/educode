@@ -3,6 +3,7 @@ import { motion, AnimatePresence } from 'framer-motion';
 import { Mail, Eye, User, Lock, X, CheckCircle, AlertCircle } from 'lucide-react';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { getLandingPageForRole } from '../utils/navigation.js';
 
 const TypewriterText = ({ text, delay = 0 }) => {
   const [displayText, setDisplayText] = useState('');
@@ -146,7 +147,8 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
         setSuccess('Успешный вход в систему!');
         setTimeout(() => {
           onClose();
-          onPageChange('courses');
+          const landingPage = getLandingPageForRole(result.user?.role);
+          onPageChange(landingPage);
         }, 1500);
       } else {
         setError(result.error || 'Неправильный пароль');
@@ -163,7 +165,8 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
         setSuccess('Регистрация успешна! Добро пожаловать!');
         setTimeout(() => {
           onClose();
-          onPageChange('courses');
+          const landingPage = getLandingPageForRole(result.user?.role);
+          onPageChange(landingPage);
         }, 1500);
       } else {
         setError(result.error);
@@ -398,6 +401,12 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
                         <Eye className="w-5 h-5" />
                       </button>
                     </div>
+                  </div>
+                )}
+
+                {mode === 'register' && (
+                  <div className="rounded-lg border border-amber-200 bg-amber-50 px-4 py-3 text-sm text-amber-800">
+                    Регистрация проходит через администратора EduCode. Используйте выданный аккаунт или свяжитесь с администратором, чтобы получить доступ.
                   </div>
                 )}
 

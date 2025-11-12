@@ -4,8 +4,9 @@ import LanguageSwitcher from './LanguageSwitcher';
 import UserMenu from './UserMenu';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
+import { getLandingPageForRole } from '../utils/navigation.js';
 
-const Navbar = ({ onOpenModal, onPageChange }) => {
+const Navbar = ({ onOpenModal, onPageChange, currentPage }) => {
   const [scrolled, setScrolled] = useState(false);
   const { t } = useLanguage();
   
@@ -19,6 +20,14 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
   } catch (error) {
     console.warn('Navbar: useAuth not available', error);
   }
+
+  const handleDashboardNavigate = () => {
+    if (!user) return;
+    const landing = getLandingPageForRole(user.role);
+    if (landing) {
+      onPageChange?.(landing);
+    }
+  };
   
   // Handle scroll effect
   useEffect(() => {
@@ -69,12 +78,22 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
             
             {/* Навигационные ссылки */}
             <div className="hidden md:flex items-center space-x-6">
-              <a href="#about" className="text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors hover:opacity-80">
+              <button
+                onClick={() => onPageChange?.('home')}
+                className={`text-sm font-medium transition-colors hover:opacity-80 ${
+                  currentPage === 'home' ? 'text-blue-600' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
                 {t('navbar.about')}
-              </a>
-              <a href="#contacts" className="text-gray-700 hover:text-gray-900 text-sm font-medium transition-colors hover:opacity-80">
+              </button>
+              <button
+                onClick={() => onPageChange?.('courses')}
+                className={`text-sm font-medium transition-colors hover:opacity-80 ${
+                  currentPage === 'courses' ? 'text-blue-600' : 'text-gray-700 hover:text-gray-900'
+                }`}
+              >
                 {t('navbar.contacts')}
-              </a>
+              </button>
             </div>
           </div>
           
@@ -82,7 +101,17 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
           <div className="flex items-center gap-4">
             <LanguageSwitcher />
                    {isAuthenticated ? (
-                     <UserMenu onPageChange={onPageChange} />
+                     <>
+                       <motion.button
+                         onClick={handleDashboardNavigate}
+                         className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"
+                         whileHover={{ scale: 1.03 }}
+                         whileTap={{ scale: 0.98 }}
+                       >
+                         {user?.role === 'admin' ? 'Админ-панель' : user?.role === 'teacher' ? 'Кабинет преподавателя' : 'Мои курсы'}
+                       </motion.button>
+                       <UserMenu onPageChange={onPageChange} />
+                     </>
                    ) : (
               <>
                 <motion.button 
@@ -93,7 +122,7 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
                 >
                   {t('navbar.signin')}
                 </motion.button>
-                <motion.button
+                {/* <motion.button
                   className="px-3 sm:px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base"
                   onClick={() => onOpenModal('signup')}
                   whileHover={{ scale: 1.03 }}
@@ -101,7 +130,7 @@ const Navbar = ({ onOpenModal, onPageChange }) => {
                 >
                   <span className="hidden sm:inline">{t('navbar.signup')}</span>
                   <span className="sm:hidden">{t('navbar.signupMobile')}</span>
-                </motion.button>
+                </motion.button> */}
               </>
             )}
           </div>

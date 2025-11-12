@@ -31,7 +31,12 @@ class Settings(BaseSettings):
     
     # Security Settings
     SECRET_KEY: str = "your-secret-key-change-in-production"
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    ALLOWED_ORIGINS: List[str] = [
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ]
     
     # Database Settings
     DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
@@ -79,9 +84,9 @@ class Settings(BaseSettings):
     
     @validator("ALLOWED_ORIGINS", pre=True)
     def parse_cors_origins(cls, v):
-        """Parse CORS origins from string or list."""
+        """Parse CORS origins from comma-separated string or list."""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",")]
+            return [origin.strip() for origin in v.split(",") if origin.strip()]
         return v
     
     @validator("ALLOWED_FILE_EXTENSIONS", pre=True)

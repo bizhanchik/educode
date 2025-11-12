@@ -59,6 +59,15 @@ const TeacherDashboard = ({ onPageChange }) => {
     }
   }, [user]);
 
+  if (!user || user.role !== 'teacher') {
+    return (
+      <div className="max-w-4xl mx-auto mt-28 mb-12 bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
+        <h2 className="text-2xl font-semibold text-gray-900 mb-4">Доступ ограничен</h2>
+        <p className="text-gray-600">Страница доступна только для преподавателей. Пожалуйста, войдите под учетной записью преподавателя.</p>
+      </div>
+    );
+  }
+
   // Функции для редактирования курсов
   const handleEditCourse = (course) => {
     setEditingCourse(course);

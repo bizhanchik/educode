@@ -11,7 +11,7 @@ const AboutSection = () => {
         viewport={{ once: true }}
         className="text-3xl sm:text-4xl md:text-5xl font-bold mb-4 sm:mb-6 text-center"
       >
-        О проекте <span className="text-indigo-500">EduCode</span>
+        О проекте <span className="text-blue-500">EduCode</span>
       </motion.h2>
 
       <motion.p

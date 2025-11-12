@@ -30,14 +30,6 @@ app = FastAPI(
     redoc_url="/redoc"
 )
 
-# Configure CORS
-app.add_middleware(
-    CORSMiddleware,
-    allow_origins=["http://localhost:3000", "http://127.0.0.1:3000"],  # React frontend
-    allow_credentials=True,
-    allow_methods=["*"],
-    allow_headers=["*"],
-)
 
 # Include all routers
 app.include_router(users_router)
@@ -49,6 +41,20 @@ app.include_router(submissions_router)
 app.include_router(evaluations_router)
 app.include_router(ai_solutions_router)
 # app.include_router(practice_router, prefix="/api/practice", tags=["practice"])  # Commented out - route not implemented yet
+
+# Basic CORS configuration for the legacy entry point
+app.add_middleware(
+    CORSMiddleware,
+    allow_origins=[
+        "http://localhost:3000",
+        "http://localhost:8080",
+        "http://localhost:5173",
+        "http://127.0.0.1:5173"
+    ],
+    allow_credentials=True,
+    allow_methods=["*"],
+    allow_headers=["*"],
+)
 
 
 @app.get("/")

@@ -157,7 +157,7 @@ const AdminPanel = () => {
         <div className="space-y-2 max-h-60 overflow-y-auto">
           {users.map((user) => (
             <div
-              key={user.id}
+              key={`${user.id}-${user.email}`}
               className="flex items-center justify-between p-3 bg-white rounded-lg border border-gray-200"
             >
               <div>

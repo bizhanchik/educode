@@ -1,74 +1,161 @@
-import { useState, useEffect, createContext, useContext } from 'react';
-import { 
-  login as authLogin, 
-  register as authRegister, 
-  logout as authLogout, 
-  getCurrentUser, 
-  isAuthenticated,
-  initDatabase 
-} from '../utils/auth.js';
+import { useState, useEffect, useCallback, useRef, createContext, useContext } from 'react';
+import { initDatabase } from '../utils/auth.js';
+import apiRequest, {
+  getStoredToken,
+  setStoredToken,
+  clearStoredToken,
+  getStoredUser,
+  setStoredUser,
+  getTokenExpiration,
+  setTokenExpiration as persistTokenExpiration
+} from '../utils/apiClient.js';
 
 // Контекст аутентификации
 const AuthContext = createContext();
+
+const normalizeUser = (rawUser) => {
+  if (!rawUser) return null;
+  const fullName = rawUser.fullName || rawUser.name || '';
+  return {
+    ...rawUser,
+    fullName,
+    name: rawUser.name || fullName,
+    role: rawUser.role || 'student',
+    teacherId: rawUser.teacherId || rawUser.teacher_id || (rawUser.role === 'teacher' ? `teacher_${rawUser.id}` : undefined)
+  };
+};
 
 // Провайдер аутентификации
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [tokenExpiry, setTokenExpiry] = useState(() => getTokenExpiration());
+  const tokenExpiryTimeoutRef = useRef(null);
+
+  const clearAuthState = useCallback(() => {
+    clearStoredToken();
+    persistTokenExpiration(null);
+    setTokenExpiry(null);
+    setStoredUser(null);
+    setUser(null);
+  }, []);
+
+  const fetchCurrentUser = useCallback(
+    async (token) => {
+      const profile = await apiRequest('/auth/me', { token, skipAuth: true });
+      const normalized = normalizeUser(profile);
+      setUser(normalized);
+      setStoredUser(normalized);
+      return normalized;
+    },
+    []
+  );
+
+  const scheduleTokenExpirationCheck = useCallback(() => {
+    if (tokenExpiryTimeoutRef.current) {
+      clearTimeout(tokenExpiryTimeoutRef.current);
+    }
+    if (!tokenExpiry) return;
+
+    const timeoutMs = tokenExpiry - Date.now();
+    if (timeoutMs <= 0) {
+      clearAuthState();
+      return;
+    }
+
+    tokenExpiryTimeoutRef.current = setTimeout(() => {
+      clearAuthState();
+    }, timeoutMs);
+  }, [tokenExpiry, clearAuthState]);
 
   // Инициализация при загрузке
   useEffect(() => {
     initDatabase();
-    const currentUser = getCurrentUser();
-    setUser(currentUser);
-    setLoading(false);
-  }, []);
+    const initializeAuth = async () => {
+      const token = getStoredToken();
+      if (!token) {
+        clearAuthState();
+        setLoading(false);
+        return;
+      }
+
+      const cachedUser = getStoredUser();
+      if (cachedUser) {
+        setUser(cachedUser);
+      }
+
+      try {
+        await fetchCurrentUser(token);
+      } catch (error) {
+        console.warn('Не удалось обновить профиль пользователя', error);
+        if (error?.status === 401) {
+          clearAuthState();
+        }
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    initializeAuth();
+  }, [fetchCurrentUser, clearAuthState]);
+
+  useEffect(() => {
+    scheduleTokenExpirationCheck();
+    return () => {
+      if (tokenExpiryTimeoutRef.current) {
+        clearTimeout(tokenExpiryTimeoutRef.current);
+      }
+    };
+  }, [scheduleTokenExpirationCheck]);
 
   // Функция входа
   const login = async (email, password) => {
     setLoading(true);
     try {
-      const result = authLogin(email, password);
-      if (result.success) {
-        setUser(result.user);
-        return { success: true, user: result.user };
+      const authData = await apiRequest('/auth/login', {
+        method: 'POST',
+        body: { email, password },
+        skipAuth: true
+      });
+
+      setStoredToken(authData.access_token);
+      if (authData.expires_in) {
+        const expiresAt = Date.now() + authData.expires_in * 1000;
+        persistTokenExpiration(expiresAt);
+        setTokenExpiry(expiresAt);
       } else {
-        return { success: false, error: result.error };
+        persistTokenExpiration(null);
+        setTokenExpiry(null);
       }
+      const profile = await fetchCurrentUser(authData.access_token);
+      return { success: true, user: profile };
     } catch (error) {
-      return { success: false, error: 'Ошибка при входе в систему' };
+      clearAuthState();
+      return { success: false, error: error.message || 'Ошибка при входе в систему' };
     } finally {
       setLoading(false);
     }
   };
 
   // Функция регистрации
-  const register = async (email, password, fullName) => {
-    setLoading(true);
-    try {
-      const result = authRegister(email, password, fullName);
-      if (result.success) {
-        setUser(result.user);
-        return { success: true, user: result.user };
-      } else {
-        return { success: false, error: result.error };
-      }
-    } catch (error) {
-      return { success: false, error: 'Ошибка при регистрации' };
-    } finally {
-      setLoading(false);
-    }
+  const register = async () => {
+    return {
+      success: false,
+      error: 'Регистрация новых пользователей доступна только через администратора.'
+    };
   };
 
   // Функция выхода
   const logout = () => {
-    authLogout();
-    setUser(null);
+    clearAuthState();
   };
 
   // Проверка авторизации
   const checkAuth = () => {
-    return isAuthenticated();
+    const token = getStoredToken();
+    if (!token) return false;
+    if (!tokenExpiry) return true;
+    return tokenExpiry > Date.now();
   };
 
   const value = {
@@ -78,7 +165,8 @@ export const AuthProvider = ({ children }) => {
     register,
     logout,
     checkAuth,
-    isAuthenticated: !!user
+    isAuthenticated: !!user && checkAuth(),
+    tokenExpiry
   };
 
   return (
