@@ -310,7 +310,7 @@ const TeacherDashboard = ({ onPageChange }) => {
           whileHover={{ scale: 1.05 }}
           whileTap={{ scale: 0.95 }}
         >
-          ← Назад к курсам
+          ← {t('courses.backToCourses')}
         </motion.button>
         <h2 className="text-2xl font-bold text-gray-900">Добавить урок</h2>
       </div>

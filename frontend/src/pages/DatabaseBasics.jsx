@@ -166,7 +166,7 @@ const DatabaseBasics = ({ onPageChange }) => {
   return (
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7] min-h-screen">
       {/* Back Button */}
-      <BackButton onClick={handleBackToCourses}>Назад к курсам</BackButton>
+      <BackButton onClick={handleBackToCourses}>{t('courses.backToCourses')}</BackButton>
       
       {/* Hero Section */}
       <section className="pt-20 sm:pt-24 md:pt-20 pb-12 sm:pb-16 md:pb-20 px-4 sm:px-6 md:px-8">

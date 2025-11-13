@@ -153,9 +153,6 @@ const Journal = ({ onPageChange }) => {
     if (userData) {
       admin = userData.role === 'admin';
       teacher = userData.role === 'teacher';
-      console.log('Journal - userData:', userData, 'role:', userData.role, 'isTeacher:', teacher);
-    } else {
-      console.log('Journal - NO USER DATA FOUND');
     }
     
     setIsAdmin(admin);
@@ -163,7 +160,7 @@ const Journal = ({ onPageChange }) => {
     setCurrentUser(userData);
   }, [authUser]);
 
-  const [tab, setTab] = useState('groups');
+  const [tab, setTab] = useState('courses');
   const [isMobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [detailCourse, setDetailCourse] = useState(null);
   const [editCourse, setEditCourse] = useState(null);
@@ -327,15 +324,31 @@ const Journal = ({ onPageChange }) => {
     }
   };
 
+  // Функция получения переведенного названия курса
+  const getCourseName = (course) => {
+    if (course.code === 'ПМ02') {
+      return t('courses.courseDescription');
+    } else if (course.code === 'ПМ01') {
+      return t('courses.coursePM01Full');
+    } else if (course.code === 'ООД14') {
+      return t('courses.courseOOD14Full');
+    }
+    return course.name;
+  };
+
   // Фильтрация данных по поисковому запросу
   const getFilteredData = () => {
     const query = searchQuery.toLowerCase();
     switch (tab) {
       case 'courses':
-        return mockCourses.filter(c =>
-          (courseStatus === 'Все' ? true : c.status === courseStatus) &&
-          (!query || c.name.toLowerCase().includes(query) || c.teacher.toLowerCase().includes(query))
-        );
+        return mockCourses.filter(c => {
+          const translatedName = getCourseName(c);
+          return (courseStatus === 'Все' ? true : c.status === courseStatus) &&
+            (!query || translatedName.toLowerCase().includes(query) || c.name.toLowerCase().includes(query) || c.teacher.toLowerCase().includes(query));
+        }).map(c => ({
+          ...c,
+          translatedName: getCourseName(c)
+        }));
       case 'teachers':
         return mockTeachers.filter(t =>
           !query || t.name.toLowerCase().includes(query) || t.course.toLowerCase().includes(query)
@@ -380,7 +393,7 @@ const Journal = ({ onPageChange }) => {
         excelData = data.map((course, idx) => ({
           [t('admin.journal.number')]: idx + 1,
           [t('admin.journal.codeHeader')]: course.code,
-          [t('admin.journal.name')]: course.name,
+          [t('admin.journal.name')]: course.translatedName || course.name,
           [t('admin.journal.teacherHeader')]: course.teacher,
           [t('admin.journal.groupsHeader')]: (course.groups || []).join(', '),
           [t('admin.journal.statusHeader')]: course.status === 'Активен' ? t('admin.journal.active') : course.status === 'Неактивен' ? t('admin.journal.inactive') : course.status,
@@ -460,28 +473,60 @@ const Journal = ({ onPageChange }) => {
     }
   };
 
-  // ПРОСТОЙ ЖУРНАЛ ДЛЯ СТУДЕНТА (старый вид)
-  if (!isAdmin) {
+  // АДМИН-ЖУРНАЛ (вкладки и разделы) - новый порядок согласно ТЗ
+  // Создаём sidebarItems с переводами
+  const sidebarItems = [
+    { id: 'courses', label: t('admin.journal.courses'), icon: BookOpen },
+    { id: 'groups', label: t('admin.journal.groups'), icon: UserCog },
+    { id: 'students', label: t('admin.journal.students'), icon: Users },
+    { id: 'teachers', label: t('admin.journal.teachers'), icon: GraduationCap },
+    { id: 'settings', label: t('admin.journal.settings'), icon: Settings },
+  ];
+
+  // Меню для преподавателей (как у админа, но без Преподаватели и Настройки)
+  const teacherSidebarItems = [
+    { id: 'courses', label: t('admin.journal.myCourses'), icon: BookOpen },
+    { id: 'groups', label: t('admin.journal.groups'), icon: UserCog },
+    { id: 'students', label: t('admin.journal.students'), icon: Users },
+  ];
+
+  // Загружаем курсы преподавателя
+  useEffect(() => {
+    if (isTeacher && currentUser?.teacherId) {
+      setLoadingCourses(true);
+      try {
+        const courses = getTeacherCourses(currentUser.teacherId);
+        setTeacherCourses(courses);
+      } catch (error) {
+        console.error('Ошибка загрузки курсов:', error);
+      } finally {
+        setLoadingCourses(false);
+      }
+    }
+  }, [isTeacher, currentUser]);
+
+  // ПРОСТОЙ ЖУРНАЛ ДЛЯ СТУДЕНТА (старый вид) - должен быть ПОСЛЕ всех хуков
+  if (!isAdmin && !isTeacher) {
     const studentCourses = [
-      { id: 1, code: 'ПМ02', name: 'Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения.', teacher: 'Мартынцов Николай Викторович' }
+      { id: 1, code: 'ПМ02', name: t('courses.courseDescription') + '.', teacher: 'Мартынцов Николай Викторович' }
     ];
     return (
       <div className="bg-white min-h-screen">
-        <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
+        <BackButton onClick={() => onPageChange && onPageChange('courses')}>{t('courses.backToCourses')}</BackButton>
         <section className="pt-20 pb-8 px-6">
           <div className="max-w-7xl mx-auto">
             <div className="text-left mb-8">
-              <h1 className="text-4xl font-bold text-gray-900 mb-2">ЖУРНАЛ</h1>
+              <h1 className="text-4xl font-bold text-gray-900 mb-2">{t('admin.journal.journalTitle')}</h1>
             </div>
             <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg">
               <table className="w-full border-collapse">
                   <thead className="bg-gray-50">
                     <tr>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">№</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Код предмета</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Название</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">ФИО преподавателя</th>
-                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">Операции</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.number')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.subjectCode')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.name')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.fullNameTeacherHeader')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.operations')}</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -517,37 +562,6 @@ const Journal = ({ onPageChange }) => {
       </div>
     );
   }
-
-  // АДМИН-ЖУРНАЛ (вкладки и разделы) - новый порядок согласно ТЗ
-  // Создаём sidebarItems с переводами
-  const sidebarItems = [
-    { id: 'courses', label: t('admin.journal.courses'), icon: BookOpen },
-    { id: 'groups', label: t('admin.journal.groups'), icon: UserCog },
-    { id: 'students', label: t('admin.journal.students'), icon: Users },
-    { id: 'teachers', label: t('admin.journal.teachers'), icon: GraduationCap },
-    { id: 'settings', label: t('admin.journal.settings'), icon: Settings },
-  ];
-
-  // Меню для преподавателей
-  const teacherSidebarItems = [
-    { id: 'groups', label: 'Группы', icon: Users },
-    { id: 'courses', label: 'Данные курса', icon: BookOpen },
-  ];
-
-  // Загружаем курсы преподавателя
-  useEffect(() => {
-    if (isTeacher && currentUser?.teacherId) {
-      setLoadingCourses(true);
-      try {
-        const courses = getTeacherCourses(currentUser.teacherId);
-        setTeacherCourses(courses);
-      } catch (error) {
-        console.error('Ошибка загрузки курсов:', error);
-      } finally {
-        setLoadingCourses(false);
-      }
-    }
-  }, [isTeacher, currentUser]);
 
   return (
     <div className="bg-white min-h-screen flex">
@@ -589,12 +603,11 @@ const Journal = ({ onPageChange }) => {
       )}
 
       {/* Фиксированное боковое меню для преподавателя */}
-      {isTeacher ? (
-        <aside className="flex fixed top-0 left-0 h-screen w-[240px] bg-white border-r-4 border-blue-500 shadow-2xl flex-col p-5 z-[100]" style={{ top: '80px', height: 'calc(100vh - 80px)' }}>
+      {isTeacher && (
+        <aside className="hidden lg:flex fixed top-0 left-0 h-screen w-[240px] bg-white border-r border-gray-200 shadow-sm flex-col p-5 z-30">
           {/* Заголовок */}
-          <div className="mb-6">
-            <h1 className="text-xl font-bold text-blue-600">ЖУРНАЛ</h1>
-            <p className="text-xs text-gray-500 mt-1">Меню преподавателя</p>
+          <div className="pt-20 mb-6">
+            <h1 className="text-lg font-bold text-gray-900">{t('admin.journal.title')}</h1>
           </div>
           {/* Навигация */}
           <nav className="flex-1 flex flex-col gap-1">
@@ -605,7 +618,11 @@ const Journal = ({ onPageChange }) => {
                   key={item.id}
                   onClick={() => {
                     setTab(item.id);
-                    setSearchQuery('');
+                    setSearchQuery(''); // Очищаем поиск при смене вкладки
+                    setStudentGroupFilter(''); // Очищаем фильтр группы
+                    if (item.id === 'students') {
+                      setSelectedStudentGroup(''); // Сбрасываем фильтр при переходе на вкладку Студенты
+                    }
                   }}
                   className={`flex items-center gap-3 py-2 px-3 rounded-md transition-all duration-200 ${
                     tab === item.id
@@ -620,10 +637,6 @@ const Journal = ({ onPageChange }) => {
             })}
           </nav>
         </aside>
-      ) : (
-        <div className="fixed top-20 left-4 z-[100] bg-red-500 text-white p-2 rounded text-xs">
-          DEBUG: isTeacher = {String(isTeacher)}
-        </div>
       )}
 
       {/* Мобильное бургер-меню для админа (скрытое по умолчанию) */}
@@ -734,15 +747,10 @@ const Journal = ({ onPageChange }) => {
 
       {/* Основной контент */}
       <main className={`flex-1 ${(isAdmin || isTeacher) ? 'ml-[240px]' : ''}`}>
-        <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
+        <BackButton onClick={() => onPageChange && onPageChange('courses')}>{t('courses.backToCourses')}</BackButton>
 
         <section className="pt-20 pb-8 px-6">
           <div className="max-w-7xl mx-auto">
-            {!isAdmin && !isTeacher && (
-              <div className="mb-2">
-                <h1 className="text-[28px] font-bold text-gray-900">ЖУРНАЛ</h1>
-              </div>
-            )}
             {isAdmin && (
               <>
                 {/* Заголовок */}
@@ -752,13 +760,13 @@ const Journal = ({ onPageChange }) => {
                   </h1>
                 </div>
 
-            {/* Модалки: Подробнее / Редактировать / Удалить */}
+            {/* Модалки: Подробнее / Редактировать / Удалить (доступны для админа и преподавателя) */}
             {detailCourse && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('admin.journal.details')}</h3>
                 <div className="space-y-1 text-sm text-gray-700">
-                  <p><span className="text-gray-500">{t('admin.journal.name')}:</span> {detailCourse.name}</p>
+                  <p><span className="text-gray-500">{t('admin.journal.name')}:</span> {detailCourse.translatedName || detailCourse.name}</p>
                   <p><span className="text-gray-500">{t('admin.journal.teacher')}:</span> {detailCourse.teacher}</p>
                   <p><span className="text-gray-500">{t('admin.journal.groups')}:</span> {(detailCourse.groups||[]).join(', ')}</p>
                   <p><span className="text-gray-500">{t('admin.journal.status')}:</span> {detailCourse.status || (detailCourse.code==='ООД14'?t('admin.journal.archive'):t('admin.journal.active'))}</p>
@@ -769,13 +777,15 @@ const Journal = ({ onPageChange }) => {
                 </div>
                 <div className="mt-4 flex items-center justify-end gap-2">
                   <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={()=>setDetailCourse(null)}>{t('admin.journal.close')}</button>
-                  <button className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm hover:bg-[#1d4ed8] transition-colors" onClick={()=>{setEditCourse(detailCourse); setDetailCourse(null);}}>{t('admin.journal.edit')}</button>
+                  {isAdmin && (
+                    <button className="px-4 py-2 bg-[#2563EB] text-white rounded-lg text-sm hover:bg-[#1d4ed8] transition-colors" onClick={()=>{setEditCourse(detailCourse); setDetailCourse(null);}}>{t('admin.journal.edit')}</button>
+                  )}
                 </div>
               </div>
             </div>
           )}
 
-          {editCourse && (
+          {editCourse && isAdmin && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('admin.journal.edit')} {t('admin.journal.name').toLowerCase()}</h3>
@@ -796,7 +806,7 @@ const Journal = ({ onPageChange }) => {
             </div>
           )}
 
-          {deleteCourse && (
+          {deleteCourse && isAdmin && (
             <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
               <div className="bg-white rounded-lg border border-gray-200 w-full max-w-md p-5">
                 <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('admin.journal.delete')} {t('admin.journal.name').toLowerCase()}?</h3>
@@ -811,8 +821,9 @@ const Journal = ({ onPageChange }) => {
             </div>
           )}
 
+          {/* Модальные окна (доступны для админа) */}
           {/* Модальное окно с курсами студента */}
-          {selectedStudentCourses && (
+          {isAdmin && selectedStudentCourses && (
             <div 
               className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50"
               onClick={() => setSelectedStudentCourses(null)}
@@ -860,7 +871,7 @@ const Journal = ({ onPageChange }) => {
           )}
 
           {/* Модальное окно изменения роли пользователя */}
-          {selectedUserForEdit && (
+          {isAdmin && selectedUserForEdit && (
             <div 
               className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50"
               onClick={() => setSelectedUserForEdit(null)}
@@ -905,7 +916,7 @@ const Journal = ({ onPageChange }) => {
           )}
 
           {/* Модальное окно сброса пароля */}
-          {selectedUserForPassword && (
+          {isAdmin && selectedUserForPassword && (
             <div 
               className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50"
               onClick={() => setSelectedUserForPassword(null)}
@@ -937,7 +948,7 @@ const Journal = ({ onPageChange }) => {
           )}
 
           {/* Модальное окно удаления пользователя */}
-          {selectedUserForDelete && (
+          {isAdmin && selectedUserForDelete && (
             <div 
               className="fixed inset-0 bg-black/20 flex items-center justify-center p-4 z-50"
               onClick={() => setSelectedUserForDelete(null)}
@@ -968,7 +979,7 @@ const Journal = ({ onPageChange }) => {
             </div>
           )}
 
-          {/* Курсы */}
+          {/* Курсы для админа */}
           {isAdmin && tab === 'courses' && (
             <div>
               {/* Кнопки действий, фильтр и поиск */}
@@ -1029,7 +1040,7 @@ const Journal = ({ onPageChange }) => {
                       <tr key={row.id} className="hover:bg-gray-50 transition-colors">
                         <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{idx + 1}</td>
                         <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.code}</td>
-                        <td className="px-4 py-3 border border-gray-200 text-left text-sm text-gray-900">{row.name}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-left text-sm text-gray-900">{row.translatedName || row.name}</td>
                         <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.teacher}</td>
                         <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{(row.groups || []).join(', ')}</td>
                         <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.status === 'Активен' ? t('admin.journal.active') : row.status === 'Неактивен' ? t('admin.journal.inactive') : row.status}</td>
@@ -1770,136 +1781,454 @@ const Journal = ({ onPageChange }) => {
               </>
             )}
 
-          {/* Контент для преподавателя */}
+          {/* Контент для преподавателя (такой же как у админа, но без Преподаватели и Настройки) */}
           {isTeacher && (
             <>
+              {/* Заголовок */}
               <div className="mb-6">
                 <h1 className="text-[28px] font-bold text-gray-900">
-                  {teacherSidebarItems.find(item => item.id === tab)?.label || 'Группы'}
+                  {teacherSidebarItems.find(item => item.id === tab)?.label || t('admin.journal.courses')}
                 </h1>
               </div>
 
-              {tab === 'groups' && (
-                <div className="bg-white border border-gray-200 rounded-lg p-6">
-                  <h2 className="text-xl font-semibold text-gray-900 mb-4">Группы</h2>
-                  <div className="space-y-4">
-                    {/* Группа ПО2402 */}
-                    <div className="border border-gray-200 rounded-lg p-4">
-                      <h3 className="text-lg font-semibold text-gray-900 mb-3">ПО2402</h3>
-                      <div className="space-y-2">
-                        {/* Студент Алина */}
-                        <div className="bg-gray-50 rounded-lg p-3">
-                          <div className="flex items-center justify-between">
-                            <div>
-                              <p className="font-medium text-gray-900">Алина</p>
-                              <p className="text-sm text-gray-600">student@educode.com</p>
-                            </div>
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Активен
-                            </span>
-                          </div>
-                          <div className="mt-2 text-sm text-gray-600">
-                            <p>Курсы: Алгоритмизация и блок-схемы, Администрирование баз данных</p>
-                          </div>
-                        </div>
-                        {/* Другие студенты группы ПО2402 */}
-                        {mockStudents
-                          .filter(s => s.group === 'ПО2402')
-                          .map(student => (
-                            <div key={student.id} className="bg-gray-50 rounded-lg p-3">
-                              <div className="flex items-center justify-between">
-                                <div>
-                                  <p className="font-medium text-gray-900">{student.name}</p>
-                                  <p className="text-sm text-gray-600">{student.email}</p>
-                                </div>
-                                <span className={`px-2 py-1 rounded-full text-xs font-medium ${
-                                  student.status === 'Активен' 
-                                    ? 'bg-green-100 text-green-800' 
-                                    : 'bg-gray-100 text-gray-800'
-                                }`}>
-                                  {student.status}
-                                </span>
-                              </div>
-                              <div className="mt-2 text-sm text-gray-600">
-                                <p>Курсы: {student.courseDetails.map(c => c.name).join(', ') || 'Нет курсов'}</p>
-                              </div>
-                            </div>
-                          ))}
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              )}
-
-              {tab === 'courses' && (
-                <div className="space-y-6">
-                  {loadingCourses ? (
-                    <div className="text-center py-12">
-                      <div className="w-8 h-8 border-4 border-blue-600 border-t-transparent rounded-full animate-spin mx-auto mb-4"></div>
-                      <p className="text-gray-600">Загрузка курсов...</p>
-                    </div>
-                  ) : teacherCourses.length === 0 ? (
-                    <div className="bg-white border border-gray-200 rounded-lg p-8 text-center">
-                      <BookOpen className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                      <h3 className="text-xl font-semibold text-gray-900 mb-2">У вас пока нет курсов</h3>
-                      <p className="text-gray-600">Курсы будут отображаться здесь</p>
-                    </div>
-                  ) : (
-                    <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                      {teacherCourses.map((course) => (
-                        <div
-                          key={course.id}
-                          className="bg-white border border-gray-200 rounded-lg p-6"
-                        >
-                          <div className="flex justify-between items-start mb-4">
-                            <div>
-                              <h3 className="text-xl font-semibold text-gray-900">{course.title}</h3>
-                              <p className="text-gray-600 mt-1">{course.description}</p>
-                              <p className="text-sm text-gray-500 mt-1">Категория: {course.category}</p>
-                            </div>
-                            <span className="px-2 py-1 rounded-full text-xs font-medium bg-green-100 text-green-800">
-                              Активен
-                            </span>
-                          </div>
-
-                          <div className="flex items-center gap-4 text-sm text-gray-600 mb-4">
-                            <div className="flex items-center gap-1">
-                              <BookOpen className="w-4 h-4" />
-                              {course.lessons.length} уроков
-                            </div>
-                            <div className="flex items-center gap-1">
-                              <Users className="w-4 h-4" />
-                              {course.studentsCount || 0} студентов
-                            </div>
-                          </div>
-
-                          {/* Список уроков */}
-                          <div className="mb-4">
-                            <h4 className="text-sm font-medium text-gray-700 mb-2">Уроки:</h4>
-                            <div className="space-y-2">
-                              {course.lessons.map((lesson) => (
-                                <div key={lesson.id} className="flex items-center justify-between bg-gray-50 rounded-lg p-2">
-                                  <div className="flex items-center gap-2">
-                                    <div className={`w-2 h-2 rounded-full ${lesson.isCompleted ? 'bg-green-500' : 'bg-gray-400'}`}></div>
-                                    <span className="text-sm text-gray-700">{lesson.title}</span>
-                                  </div>
-                                </div>
-                              ))}
-                            </div>
-                          </div>
-
-                          <button
-                            onClick={() => onPageChange && onPageChange('journal-detail')}
-                            className="w-full px-4 py-2 bg-blue-600 text-white rounded-lg hover:bg-blue-700 transition-colors text-sm"
-                          >
-                            Просмотреть детали
-                          </button>
-                        </div>
-                      ))}
-                    </div>
+            {/* Модалки: Подробнее (доступны для преподавателя) */}
+            {detailCourse && (
+            <div className="fixed inset-0 bg-black/30 flex items-center justify-center p-4 z-50">
+              <div className="bg-white rounded-lg border border-gray-200 w-full max-w-lg p-5">
+                <h3 className="text-lg font-semibold text-gray-900 mb-3">{t('admin.journal.details')}</h3>
+                <div className="space-y-1 text-sm text-gray-700">
+                  <p><span className="text-gray-500">{t('admin.journal.name')}:</span> {detailCourse.translatedName || detailCourse.name}</p>
+                  <p><span className="text-gray-500">{t('admin.journal.teacher')}:</span> {detailCourse.teacher}</p>
+                  <p><span className="text-gray-500">{t('admin.journal.groups')}:</span> {(detailCourse.groups||[]).join(', ')}</p>
+                  <p><span className="text-gray-500">{t('admin.journal.status')}:</span> {detailCourse.status || (detailCourse.code==='ООД14'?t('admin.journal.archive'):t('admin.journal.active'))}</p>
+                  <p><span className="text-gray-500">{t('admin.journal.description')}:</span> {detailCourse.description || 'Практический курс по составлению алгоритмов и созданию блок-схем.'}</p>
+                  {detailCourse.updatedAt && (
+                    <p><span className="text-gray-500">{t('admin.journal.updateDate')}:</span> {detailCourse.updatedAt}</p>
                   )}
                 </div>
+                <div className="mt-4 flex items-center justify-end gap-2">
+                  <button className="px-4 py-2 border border-gray-300 rounded-lg text-sm text-gray-700 hover:bg-gray-100 transition-colors" onClick={()=>setDetailCourse(null)}>{t('admin.journal.close')}</button>
+                </div>
+              </div>
+            </div>
+          )}
+
+          {/* Курсы для преподавателя */}
+          {isTeacher && tab === 'courses' && (
+            <div>
+              {/* Кнопки действий, фильтр и поиск */}
+              <div className="mb-6 flex flex-wrap items-center gap-3">
+                {/* Поиск слева */}
+                <div className="relative w-full sm:w-[320px]">
+                  <input
+                    type="text"
+                    placeholder={getSearchPlaceholder()}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                  </svg>
+                </div>
+                <select 
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  value={courseStatus} 
+                  onChange={(e) => setCourseStatus(e.target.value)}
+                >
+                  <option>{t('admin.journal.all')}</option>
+                  <option>{t('admin.journal.active')}</option>
+                  <option>{t('admin.journal.archive')}</option>
+                </select>
+                <button 
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+                  onClick={exportToExcel}
+                >
+                  {t('admin.journal.exportExcel')}
+                </button>
+              </div>
+              
+              {/* Таблица курсов */}
+              <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.number')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.codeHeader')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.name')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.teacherHeader')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.groupsHeader')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.statusHeader')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.dateHeader')}</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getFilteredData().map((row, idx) => (
+                      <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{idx + 1}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.code}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-left text-sm text-gray-900">{row.translatedName || row.name}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.teacher}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{(row.groups || []).join(', ')}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.status === 'Активен' ? t('admin.journal.active') : row.status === 'Неактивен' ? t('admin.journal.inactive') : row.status}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.updatedAt}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              className="p-1.5 text-gray-500 hover:text-[#2563EB] transition-colors" 
+                              title={t('admin.journal.view')}
+                              onClick={() => setDetailCourse(row)}
+                            >
+                              <EyeIcon />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {getFilteredData().length === 0 && (
+                      <tr>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-600" colSpan={8}>
+                          {searchQuery ? `${t('admin.journal.noMatches')} "${searchQuery}"` : t('admin.journal.noData')}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Группы для преподавателя */}
+          {isTeacher && tab === 'groups' && (
+            <div>
+              {/* Кнопки действий и поиск */}
+              <div className="mb-6 flex flex-wrap items-center gap-3">
+                {/* Поиск слева */}
+                <div className="relative w-full sm:w-[320px]">
+                  <input
+                    type="text"
+                    placeholder={getSearchPlaceholder()}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                  </svg>
+                </div>
+                <button 
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+                  onClick={exportToExcel}
+                >
+                  {t('admin.journal.exportExcel')}
+                </button>
+              </div>
+              
+              {/* Таблица групп */}
+              <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+                <table className="w-full border-collapse">
+                  <thead className="bg-gray-50">
+                    <tr>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.number')}</th>
+                      <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.groupHeader')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.assignedCoursesHeader')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.studentsCountHeader')}</th>
+                      <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.curatorHeader')}</th>
+                      <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.actions')}</th>
+                    </tr>
+                  </thead>
+                  <tbody>
+                    {getFilteredData().map((row, idx) => (
+                      <tr key={row.id} className="hover:bg-gray-50 transition-colors">
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{idx + 1}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-left text-sm text-gray-900">
+                          <button
+                            onClick={() => handleGroupClick(row.name)}
+                            className="text-[#2563EB] hover:text-[#1d4ed8] hover:underline transition-colors"
+                          >
+                            {row.name}
+                          </button>
+                        </td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">
+                          {(row.courses || []).join(', ')}
+                        </td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.studentsCount}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.curator}</td>
+                        <td className="px-4 py-3 border border-gray-200 text-right">
+                          <div className="flex items-center justify-end gap-2">
+                            <button 
+                              className="p-1.5 text-gray-500 hover:text-[#2563EB] transition-colors" 
+                              title={t('admin.journal.view')}
+                              onClick={() => setDetailCourse(row)}
+                            >
+                              <EyeIcon />
+                            </button>
+                          </div>
+                        </td>
+                      </tr>
+                    ))}
+                    {getFilteredData().length === 0 && (
+                      <tr>
+                        <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-600" colSpan={6}>
+                          {searchQuery ? `${t('admin.journal.noMatches')} "${searchQuery}"` : t('admin.journal.noData')}
+                        </td>
+                      </tr>
+                    )}
+                  </tbody>
+                </table>
+              </div>
+            </div>
+          )}
+
+          {/* Студенты для преподавателя */}
+          {isTeacher && tab === 'students' && (
+            <div>
+              {/* Кнопки действий, фильтр по группе и поиск */}
+              <div className="mb-6 flex flex-wrap items-center gap-3">
+                {/* Поиск слева */}
+                <div className="relative w-full sm:w-[320px]">
+                  <input
+                    type="text"
+                    placeholder={getSearchPlaceholder()}
+                    value={searchQuery}
+                    onChange={(e) => setSearchQuery(e.target.value)}
+                    className="w-full pl-10 pr-3 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  />
+                  <svg className="absolute left-3 top-2.5 w-4 h-4 text-gray-400" fill="none" stroke="currentColor" strokeWidth="2" viewBox="0 0 24 24">
+                    <path strokeLinecap="round" strokeLinejoin="round" d="M21 21l-5.2-5.2M10 18a8 8 0 1 1 0-16 8 8 0 0 1 0 16z" />
+                  </svg>
+                </div>
+                {/* Фильтр групп справа от поиска */}
+                <select
+                  className="px-4 py-2 border border-gray-300 rounded-lg text-sm focus:outline-none focus:ring-1 focus:ring-blue-400"
+                  value={selectedStudentGroup}
+                  onChange={(e) => {
+                    setSelectedStudentGroup(e.target.value);
+                    setStudentGroupFilter(''); // Очищаем старый фильтр
+                  }}
+                >
+                  <option value="">{t('admin.journal.allGroups')}</option>
+                  {getAllGroups().map(group => (
+                    <option key={group} value={group}>{group}</option>
+                  ))}
+                </select>
+                {studentGroupFilter && (
+                  <button
+                    className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+                    onClick={() => {
+                      setStudentGroupFilter('');
+                      setTab('groups');
+                    }}
+                  >
+                    ← {t('admin.journal.backToGroups')}
+                  </button>
+                )}
+                <button 
+                  className="px-4 py-2 border border-gray-300 text-gray-700 rounded-lg text-sm hover:bg-gray-100 transition-colors"
+                  onClick={exportToExcel}
+                >
+                  {t('admin.journal.exportExcel')}
+                </button>
+              </div>
+
+              {/* Проверка: показывать ли сообщение по умолчанию или таблицу */}
+              {!searchQuery && !selectedStudentGroup && !studentGroupFilter ? (
+                <div className="flex items-center justify-center py-20">
+                  <p className="text-sm text-gray-500">
+                    ⚙️ {t('admin.journal.selectGroup')}
+                  </p>
+                </div>
+              ) : (
+                /* Таблица студентов */
+                <div className="overflow-x-auto bg-white border border-gray-200 rounded-lg">
+                {!selectedStudentGroup && !studentGroupFilter ? (
+                  /* Группировка по группам */
+                  <div>
+                    {Object.entries(getStudentsGroupedByGroup(getFilteredData())).map(([groupName, students], groupIdx) => (
+                      <div key={groupName} className={groupIdx > 0 ? 'mt-4 border-t border-gray-200' : ''}>
+                        <div className="px-4 py-3 border-b border-gray-200 bg-gray-50">
+                          <h3 className="text-sm font-semibold text-gray-800">
+                            {t('admin.journal.group')} {groupName}
+                          </h3>
+                        </div>
+                        <table className="w-full border-collapse">
+                          <thead className="bg-gray-50">
+                            <tr>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.number')}</th>
+                              <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.fullNameHeader')}</th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.emailHeader')}</th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.passwordHeader')}</th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.coursesCompletedHeader')}</th>
+                              <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.statusHeader')}</th>
+                              <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.actions')}</th>
+                            </tr>
+                          </thead>
+                          <tbody>
+                            {students.map((row, idx) => (
+                              <tr key={row.id} className="hover:bg-gray-100 transition-colors">
+                                <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{idx + 1}</td>
+                                <td className="px-4 py-3 border border-gray-200 text-left text-sm text-gray-900">{row.name}</td>
+                                <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.email}</td>
+                                <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.password}</td>
+                                <td 
+                                  className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors relative"
+                                  onClick={() => row.courseDetails && row.courseDetails.length > 0 && setSelectedStudentCourses(row)}
+                                >
+                                  <div className="flex items-center justify-center gap-1">
+                                    <span>{formatCoursesCount(row.courses)}</span>
+                                    {row.courseDetails && row.courseDetails.length > 0 && (
+                                      <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                        <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                      </svg>
+                                    )}
+                                  </div>
+                                </td>
+                                <td className={`px-4 py-3 border border-gray-200 text-center text-sm ${row.status === 'Активен' ? 'text-gray-900' : 'text-gray-500'}`}>
+                                  {row.status === 'Активен' ? t('admin.journal.active') : row.status === 'Неактивен' ? t('admin.journal.inactive') : row.status}
+                                </td>
+                                <td className="px-4 py-3 border border-gray-200 text-right">
+                                  <div className="flex items-center justify-end gap-2">
+                                    <button 
+                                      className="p-1.5 text-gray-500 hover:text-[#2563EB] transition-colors" 
+                                      title={t('admin.journal.view')}
+                                      onClick={() => setDetailCourse(row)}
+                                    >
+                                      <EyeIcon />
+                                    </button>
+                                  </div>
+                                </td>
+                              </tr>
+                            ))}
+                          </tbody>
+                        </table>
+                      </div>
+                    ))}
+                    {Object.keys(getStudentsGroupedByGroup(getFilteredData())).length === 0 && (
+                      <div className="px-4 py-8 text-center text-sm text-gray-500">
+                        {searchQuery ? `${t('admin.journal.noMatches')} "${searchQuery}"` : t('admin.journal.noData')}
+                      </div>
+                    )}
+                  </div>
+                ) : (
+                  /* Обычная таблица при выборе конкретной группы или поиске */
+                  <table className="w-full border-collapse">
+                    <thead className="bg-gray-50">
+                      <tr>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.number')}</th>
+                        <th className="px-4 py-3 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.fullNameHeader')}</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.emailHeader')}</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.passwordHeader')}</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.groupHeader')}</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.coursesCompletedHeader')}</th>
+                        <th className="px-4 py-3 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.statusHeader')}</th>
+                        <th className="px-4 py-3 text-right text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.actions')}</th>
+                      </tr>
+                    </thead>
+                    <tbody>
+                      {getFilteredData().map((row, idx) => {
+                        const isExpanded = isGroupExpanded(row.group);
+                        return (
+                          <React.Fragment key={row.id}>
+                            <tr className="hover:bg-gray-50 transition-colors">
+                              <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{idx + 1}</td>
+                              <td className="px-4 py-3 border border-gray-200 text-left text-sm text-gray-900">{row.name}</td>
+                              <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.email}</td>
+                              <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900">{row.password}</td>
+                              <td className="px-4 py-3 border border-gray-200 text-center text-sm">
+                                <button
+                                  onClick={() => handleGroupInStudentsClick(row.group)}
+                                  className="text-[#2563EB] hover:text-[#1d4ed8] hover:underline transition-colors font-medium flex items-center justify-center gap-1"
+                                >
+                                  <span>{isExpanded ? '▲' : '▼'}</span>
+                                  <span>{row.group}</span>
+                                </button>
+                              </td>
+                              <td 
+                                className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-900 cursor-pointer hover:bg-gray-100 transition-colors relative"
+                                onClick={() => row.courseDetails && row.courseDetails.length > 0 && setSelectedStudentCourses(row)}
+                              >
+                                <div className="flex items-center justify-center gap-1">
+                                  <span>{formatCoursesCount(row.courses)}</span>
+                                  {row.courseDetails && row.courseDetails.length > 0 && (
+                                    <svg className="w-4 h-4 text-gray-400" fill="none" stroke="currentColor" viewBox="0 0 24 24" strokeWidth={2}>
+                                      <path strokeLinecap="round" strokeLinejoin="round" d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+                                    </svg>
+                                  )}
+                                </div>
+                              </td>
+                              <td className={`px-4 py-3 border border-gray-200 text-center text-sm ${row.status === 'Активен' ? 'text-gray-900' : 'text-gray-500'}`}>
+                                {row.status === 'Активен' ? t('admin.journal.active') : row.status === 'Неактивен' ? t('admin.journal.inactive') : row.status}
+                              </td>
+                              <td className="px-4 py-3 border border-gray-200 text-right">
+                                <div className="flex items-center justify-end gap-2">
+                                  <button 
+                                    className="p-1.5 text-gray-500 hover:text-[#2563EB] transition-colors" 
+                                    title={t('admin.journal.view')}
+                                    onClick={() => setDetailCourse(row)}
+                                  >
+                                    <EyeIcon />
+                                  </button>
+                                </div>
+                              </td>
+                            </tr>
+                            {/* Вложенная таблица студентов группы */}
+                            {isExpanded && (
+                              <tr>
+                                <td colSpan={8} className="px-0 py-0 border-0 bg-gray-50">
+                                  <div className="pt-2 pb-3 border-t border-gray-200 transition-all duration-200 ease-in-out">
+                                    <div className="text-sm text-gray-500 mb-3 ml-6">
+                                      {t('admin.journal.studentsOfGroup')} {row.group}
+                                    </div>
+                                    <div className="ml-6 mr-4">
+                                      {getStudentsByGroup(row.group).length > 0 ? (
+                                        <table className="w-full border-collapse bg-white">
+                                          <thead className="bg-gray-50">
+                                            <tr>
+                                              <th className="px-4 py-2 text-center text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.number')}</th>
+                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.fullNameHeader')}</th>
+                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.emailHeader')}</th>
+                                              <th className="px-4 py-2 text-left text-xs font-medium text-gray-500 uppercase tracking-wider border border-gray-200">{t('admin.journal.passwordHeader')}</th>
+                                            </tr>
+                                          </thead>
+                                          <tbody>
+                                            {getStudentsByGroup(row.group).map((student, studentIdx) => (
+                                              <tr key={student.id} className="hover:bg-gray-50 transition-colors">
+                                                <td className="px-4 py-2 border border-gray-200 text-center text-sm text-gray-900">{studentIdx + 1}</td>
+                                                <td className="px-4 py-2 border border-gray-200 text-left text-sm text-gray-900">{student.name}</td>
+                                                <td className="px-4 py-2 border border-gray-200 text-left text-sm text-gray-900">{student.email}</td>
+                                                <td className="px-4 py-2 border border-gray-200 text-left text-sm text-gray-900">{student.password}</td>
+                                              </tr>
+                                            ))}
+                                          </tbody>
+                                        </table>
+                                      ) : (
+                                        <div className="px-4 py-2 text-sm text-gray-500">
+                                          {t('admin.journal.noStudentsInGroup')}
+                                        </div>
+                                      )}
+                                    </div>
+                                  </div>
+                                </td>
+                              </tr>
+                            )}
+                          </React.Fragment>
+                        );
+                      })}
+                      {getFilteredData().length === 0 && (
+                        <tr>
+                          <td className="px-4 py-3 border border-gray-200 text-center text-sm text-gray-600" colSpan={8}>
+                            {searchQuery ? `${t('admin.journal.noMatches')} "${searchQuery}"` : t('admin.journal.noData')}
+                          </td>
+                        </tr>
+                      )}
+                    </tbody>
+                  </table>
+                )}
+                </div>
               )}
+            </div>
+          )}
             </>
           )}
 

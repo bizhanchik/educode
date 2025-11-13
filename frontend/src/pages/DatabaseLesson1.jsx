@@ -205,7 +205,7 @@ WHERE category = 'Электроника';`
   return (
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7] min-h-screen pt-20 sm:pt-24">
       {/* Back Button */}
-      <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
+      <BackButton onClick={() => onPageChange && onPageChange('courses')}>{t('courses.backToCourses')}</BackButton>
 
       {/* Lesson Header */}
       <motion.div

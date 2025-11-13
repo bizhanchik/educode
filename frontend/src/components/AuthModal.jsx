@@ -120,7 +120,7 @@ const AuthModal = ({ isOpen, onClose, type, onSwitchModal, onPageChange }) => {
       setPassword(value);
       // Валидация пароля только при регистрации
       if (mode === 'register') {
-        validatePassword(value);
+      validatePassword(value);
       } else {
         // При входе сбрасываем валидацию
         setPasswordStrength('');

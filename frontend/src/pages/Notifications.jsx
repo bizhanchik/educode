@@ -1,7 +1,9 @@
 import React, { useState } from 'react';
 import BackButton from '../components/BackButton.jsx';
+import { useLanguage } from '../i18n.jsx';
 
 const Notifications = ({ onPageChange }) => {
+  const { t } = useLanguage();
   const [notifications, setNotifications] = useState([
     {
       id: 1,
@@ -38,7 +40,7 @@ const Notifications = ({ onPageChange }) => {
   return (
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7] min-h-screen">
       {/* Back Button */}
-      <BackButton onClick={() => onPageChange && onPageChange('courses')}>Назад к курсам</BackButton>
+      <BackButton onClick={() => onPageChange && onPageChange('courses')}>{t('courses.backToCourses')}</BackButton>
       
       {/* Header */}
       <section className="pt-20 pb-8 px-4">

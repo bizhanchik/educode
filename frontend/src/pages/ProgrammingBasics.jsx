@@ -9,7 +9,7 @@ import ResultsBlock from '../components/ResultsBlock.jsx';
 import CodeRunner from '../components/CodeRunner.jsx';
 
 const ProgrammingBasics = ({ onPageChange }) => {
-  const { t } = useLanguage();
+  const { t, language } = useLanguage();
   const { user } = useAuth();
   const [currentTask, setCurrentTask] = useState(0);
   const [code, setCode] = useState('');
@@ -129,6 +129,28 @@ const ProgrammingBasics = ({ onPageChange }) => {
       }, 2000); // Задержка для начальной анимации
     }
   }, [user]);
+
+  // Обновляем названия и описания уроков при смене языка
+  useEffect(() => {
+    setLessons(prevLessons =>
+      prevLessons.map(lesson => {
+        if (lesson.id === 1) {
+          return {
+            ...lesson,
+            title: t('courses.lessons.lesson1Title'),
+            description: t('courses.lessons.lesson1Description')
+          };
+        } else if (lesson.id === 2) {
+          return {
+            ...lesson,
+            title: t('courses.lessons.lesson2Title'),
+            description: t('courses.lessons.lesson2Description')
+          };
+        }
+        return lesson;
+      })
+    );
+  }, [language, t]);
 
   const handleLessonClick = (lesson) => {
     if (lesson.locked) {
@@ -300,24 +322,24 @@ const ProgrammingBasics = ({ onPageChange }) => {
     <div className="min-h-screen bg-gray-50">
       {/* Back Button */}
       <div className="pt-20">
-        <BackButton onClick={handleBackToLessons}>Назад к курсам</BackButton>
+        <BackButton onClick={handleBackToLessons}>{t('courses.backToCourses')}</BackButton>
       </div>
       
       <div className="container mx-auto px-4 pb-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            ПМ02 - Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения
+            {t('courses.courseTitle')}
           </h1>
           <p className="text-gray-600">
-            Изучите основы программирования и алгоритмизации
+            {t('courses.studyBasics')}
           </p>
         </div>
 
         {/* Progress Bar */}
         <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6 mb-8">
           <div className="flex items-center justify-between mb-4">
-            <h2 className="text-lg font-semibold text-gray-900">Прогресс курса</h2>
+            <h2 className="text-lg font-semibold text-gray-900">{t('courses.courseProgress')}</h2>
             <span className="text-sm text-gray-600">{courseProgress}%</span>
           </div>
           <div className="w-full bg-gray-200 rounded-full h-2 sm:h-3">
@@ -374,7 +396,7 @@ const ProgrammingBasics = ({ onPageChange }) => {
                   {/* Content */}
                   <div className="flex-1 min-w-0">
                     <h3 className="text-lg font-semibold text-gray-900 mb-1">
-                      Урок {lesson.id} — {lesson.title}
+                      {t('courses.lesson')} {lesson.id} — {lesson.title}
                     </h3>
                     <p className="text-sm text-gray-600 mb-2">
                       {lesson.description}
@@ -382,7 +404,7 @@ const ProgrammingBasics = ({ onPageChange }) => {
                     <div className="flex items-center gap-4 text-xs text-gray-500">
                       <div className="flex items-center gap-1">
                         <FileText className="w-3 h-3" />
-                        <span>Тестирование</span>
+                        <span>{t('courses.testing')}</span>
                         {lesson.testScore !== null && lesson.testScore !== undefined && (
                           <span className="text-blue-600 font-medium ml-1">{lesson.testScore}%</span>
                         )}
@@ -390,7 +412,7 @@ const ProgrammingBasics = ({ onPageChange }) => {
                       <span>|</span>
                       <div className="flex items-center gap-1">
                         <Code className="w-3 h-3" />
-                        <span>Решение задач</span>
+                        <span>{t('courses.problemSolving')}</span>
                         {lesson.practiceScore !== null && lesson.practiceScore !== undefined && (
                           <span className="text-green-600 font-medium ml-1">{lesson.practiceScore}%</span>
                         )}
@@ -419,7 +441,7 @@ const ProgrammingBasics = ({ onPageChange }) => {
                       }
                     }}
                   >
-                    {lesson.locked ? 'Заблокировано' : lesson.completed ? 'Повторить' : 'Начать урок'}
+                    {lesson.locked ? t('courses.locked') : lesson.completed ? t('courses.repeat') : t('courses.startLesson')}
                   </motion.button>
                 </div>
               </div>

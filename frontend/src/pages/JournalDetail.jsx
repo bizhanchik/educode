@@ -4,8 +4,10 @@ import { useAuth } from '../hooks/useAuth.jsx';
 import { getCourseJournal } from '../utils/auth.js';
 import { ArrowLeft } from 'lucide-react';
 import { motion } from 'framer-motion';
+import { useLanguage } from '../i18n.jsx';
 
 const JournalDetail = ({ onPageChange, courseId }) => {
+  const { t } = useLanguage();
   const [selectedSemester, setSelectedSemester] = useState('1');
 
   // Helper: map 0-100 score to US letter grade and GPA
@@ -29,7 +31,7 @@ const JournalDetail = ({ onPageChange, courseId }) => {
     1: {
       id: 1,
       code: 'ПМ02',
-      name: 'Составление алгоритма и создание блок-схемы на основе спецификации программного обеспечения.',
+      name: t('courses.courseDescription') + '.',
       journalType: 'Обычный',
       type: 'Теоретическое обучение',
       group: 'ПО2402',
@@ -42,8 +44,8 @@ const JournalDetail = ({ onPageChange, courseId }) => {
 
   // Названия уроков для отображения
   const lessonNames = {
-    1: 'Введение в языки программирования. Классификация языков программирования. Язык программирования Python. Выбор среды разработки.',
-    2: 'Переменные и типы данных',
+    1: t('admin.journal.lessonNames.lesson1'),
+    2: t('admin.journal.lessonNames.lesson2'),
     3: 'Практическая работа №1. «Условные конструкции Python»',
     4: 'Цикличные конструкции FOR, WHILE в языке программирования Python',
     5: 'Практическая работа №2. Циклические конструкции',
@@ -71,7 +73,16 @@ const JournalDetail = ({ onPageChange, courseId }) => {
       
       // Преобразуем данные журнала в формат для отображения
       // Показываем только те уроки, которые были начаты (есть startDate) или завершены
-      const topicsList = Object.keys(lessonNames)
+      const currentLessonNames = {
+        1: t('admin.journal.lessonNames.lesson1'),
+        2: t('admin.journal.lessonNames.lesson2'),
+        3: 'Практическая работа №1. «Условные конструкции Python»',
+        4: 'Цикличные конструкции FOR, WHILE в языке программирования Python',
+        5: 'Практическая работа №2. Циклические конструкции',
+        6: 'Строки в Python и обработка текстовой информации',
+        7: 'Функции и параметры функций'
+      };
+      const topicsList = Object.keys(currentLessonNames)
         .map(lessonId => {
           const entry = journalData[lessonId];
           // Показываем урок только если он был начат (есть startDate) или завершен
@@ -81,7 +92,7 @@ const JournalDetail = ({ onPageChange, courseId }) => {
           
           return {
             id: parseInt(lessonId),
-            topicName: lessonNames[lessonId],
+            topicName: currentLessonNames[lessonId],
             testStartDate: entry?.startDateFormatted || '-',
             testEndDate: entry?.endDateFormatted || '-',
             testGrade: entry?.testGrade || null,
@@ -96,7 +107,7 @@ const JournalDetail = ({ onPageChange, courseId }) => {
       // Если пользователь не залогинен, показываем пустой список
       setCourseTopics([]);
     }
-  }, [user, courseId]);
+  }, [user, courseId, t]);
 
   return (
     <div className="bg-white min-h-screen">
@@ -104,7 +115,7 @@ const JournalDetail = ({ onPageChange, courseId }) => {
       <section className="pt-20 pb-8 px-6">
       <div className="max-w-6xl mx-auto">
           {/* Back Button moved inside section to sit below navbar */}
-          <BackButton className="px-0 sm:px-0 mb-6" onClick={() => onPageChange && onPageChange('journal')}>Назад к журналу</BackButton>
+          <BackButton className="px-0 sm:px-0 mb-6" onClick={() => onPageChange && onPageChange('journal')}>{t('courses.backToJournal')}</BackButton>
           <div className="text-left mb-8">
             <h1 className="text-3xl font-bold text-gray-900 mb-2">
               {course.name}
@@ -128,22 +139,22 @@ const JournalDetail = ({ onPageChange, courseId }) => {
                 <thead className="bg-gray-50">
                   <tr>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                      №
+                      {t('admin.journal.number')}
                     </th>
                     <th className="px-4 py-3 text-left text-sm font-medium text-gray-900 border border-gray-200">
-                      Название темы
+                      {t('admin.journal.topicName')}
                     </th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                      Даты проведения
+                      {t('admin.journal.dates')}
                     </th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                      Оценка тестирования
+                      {t('admin.journal.testGrade')}
                     </th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                      Оценка решения задач
+                      {t('admin.journal.taskGrade')}
                     </th>
                     <th className="px-4 py-3 text-center text-sm font-medium text-gray-900 border border-gray-200">
-                      Средний балл
+                      {t('admin.journal.averageGrade')}
                     </th>
                   </tr>
                 </thead>

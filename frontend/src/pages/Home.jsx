@@ -2,7 +2,7 @@ import React, { useEffect } from 'react';
 import { motion, useAnimation } from 'framer-motion';
 import { useInView } from 'react-intersection-observer';
 import Hero from '../components/Hero';
-import AboutSection from '../components/AboutSection';
+import AboutEduCodeTerminal from '../components/AboutEduCodeTerminal';
 import AdminPanel from '../components/AdminPanel';
 import { useLanguage } from '../i18n.jsx';
 import { useAuth } from '../hooks/useAuth.jsx';
@@ -50,11 +50,17 @@ const Home = ({ onOpenModal, onPageChange }) => {
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7]">
       <Hero onOpenModal={onOpenModal} onPageChange={onPageChange} />
 
-      <AboutSection />
+      {/* Плавный переход от Hero к AboutEduCodeTerminal */}
+      <div className="h-8 bg-gradient-to-b from-[#edf2f7] via-indigo-50 to-indigo-50"></div>
+
+      <AboutEduCodeTerminal />
+
+      {/* Плавный переход от AboutEduCodeTerminal к следующей секции */}
+      <div className="h-8 bg-gradient-to-b from-pink-50 via-purple-50 to-gray-50"></div>
 
       {/* Панель администратора */}
       {user && user.role === 'admin' && (
-        <section className="py-16 px-8">
+        <section className="py-16 px-8 bg-gray-50">
           <AdminPanel />
         </section>
       )}
@@ -77,9 +83,9 @@ const Home = ({ onOpenModal, onPageChange }) => {
       </section>
 
       {/* Footer */}
-      <footer id="contacts" className="border-t border-gray-200 py-12 sm:py-16 px-4 sm:px-6 md:px-8">
+      <footer id="contacts" className="bg-gray-50 py-4 sm:py-6 px-4 sm:px-6 md:px-8">
         <div className="max-w-6xl mx-auto">
-          <div className="text-center">
+          <div className="text-center max-w-xs mx-auto">
             <p className="text-gray-500 text-xs sm:text-sm mb-1 sm:mb-2">EduCode © 2025</p>
             <p className="text-gray-400 text-xs">Все права защищены</p>
           </div>

@@ -61,8 +61,8 @@ const Lesson1 = ({ onPageChange }) => {
   const practiceTasks = [
     {
       id: 1,
-      title: "Первая программа",
-      description: "Напишите программу, которая выводит 'Привет, мир!'",
+      title: t('courses.lessons.firstProgram'),
+      description: t('courses.lessons.firstProgramDescription'),
       starterCode: "print('Привет, мир!')"
     },
     {
@@ -122,11 +122,11 @@ const Lesson1 = ({ onPageChange }) => {
   ];
 
   const lessonData = {
-    title: "Введение в языки программирования. Классификация языков программирования. Язык программирования Python. Выбор среды разработки",
+    title: t('courses.lessons.lesson1TitleFull'),
     video: {
       title: "Введение в программирование",
       duration: "15:30",
-      description: "Основные понятия программирования и знакомство с Python"
+      description: ""
     },
     theory: {
       content: `Программирование — это процесс создания компьютерных программ. Программа — это набор инструкций, которые компьютер может выполнить.
@@ -419,18 +419,15 @@ const Lesson1 = ({ onPageChange }) => {
     <div className="min-h-screen bg-gray-50">
       {/* Back Button */}
       <div className="pt-20">
-        <BackButton onClick={() => onPageChange('programming-basics')}>Назад к урокам</BackButton>
+        <BackButton onClick={() => onPageChange('programming-basics')}>{t('courses.lessons.backToLessons')}</BackButton>
       </div>
       
       <div className="container mx-auto px-4 pb-8">
         {/* Header */}
         <div className="text-center mb-8">
           <h1 className="text-2xl sm:text-3xl font-bold text-gray-900 mb-2">
-            Урок 1: {lessonData.title}
-          </h1>
-          <p className="text-gray-600">
-            {lessonData.video.description}
-          </p>
+              {t('courses.lessons.lesson')} 1: {lessonData.title}
+            </h1>
         </div>
 
         <div className="grid grid-cols-1 lg:grid-cols-4 gap-8">
@@ -450,13 +447,13 @@ const Lesson1 = ({ onPageChange }) => {
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       <PlayCircle className="w-4 h-4 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900">Видеоурок</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">{t('courses.lessons.videoLesson')}</h2>
                   </div>
                   
                   <div className="aspect-video bg-gray-900 rounded-lg mb-6 flex items-center justify-center">
                     <div className="text-center text-white">
                       <PlayCircle className="w-16 h-16 mx-auto mb-4 opacity-50" />
-                      <p className="text-lg font-medium">Видеоурок: {lessonData.video.title}</p>
+                      <p className="text-lg font-medium">{t('courses.lessons.videoLesson')}: {lessonData.video.title}</p>
                       <p className="text-sm opacity-75">Длительность: {lessonData.video.duration}</p>
                     </div>
                   </div>
@@ -483,7 +480,7 @@ const Lesson1 = ({ onPageChange }) => {
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       <FileText className="w-4 h-4 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900">Теория</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">{t('courses.lessons.theory')}</h2>
                   </div>
                   
                   <div className="prose prose-gray max-w-none">
@@ -542,7 +539,7 @@ const Lesson1 = ({ onPageChange }) => {
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       <FileText className="w-4 h-4 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900">Тестирование</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">{t('courses.lessons.testing')}</h2>
                   </div>
                   
                   {!isTestActive && !testCompleted && (
@@ -551,12 +548,10 @@ const Lesson1 = ({ onPageChange }) => {
                         <FileText className="w-8 h-8 text-blue-600" />
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                        Тестирование по теме урока
+                        {t('courses.lessons.testingByTopic')}
                       </h3>
                       <p className="text-gray-700 mb-6 max-w-2xl mx-auto">
-                        Проверьте свои знания с помощью интерактивного тестирования. Ответьте на вопросы по изученному материалу.
-                        Тест состоит из {testQuestions.length} вопросов с вариантами ответов.
-                        Время на выполнение: 20 минут.
+                        {t('courses.lessons.testingDescription').replace('{count}', testQuestions.length)}
                       </p>
                       <motion.button
                         onClick={startTest}
@@ -564,7 +559,7 @@ const Lesson1 = ({ onPageChange }) => {
                         whileHover={{ scale: 1.02 }}
                         whileTap={{ scale: 0.98 }}
                       >
-                        Начать тестирование
+                        {t('courses.lessons.startTesting')}
                       </motion.button>
                     </div>
                   )}
@@ -576,7 +571,7 @@ const Lesson1 = ({ onPageChange }) => {
                         <div className="flex items-center justify-between">
                           <div className="flex items-center gap-2">
                             <div className="w-3 h-3 bg-green-500 rounded-full animate-pulse"></div>
-                            <span className="text-green-700 font-medium">Время тестирования</span>
+                            <span className="text-green-700 font-medium">{t('courses.lessons.testingTime')}</span>
                           </div>
                           <div className="text-green-700 font-bold text-lg">
                             {Math.floor(testTimeLeft / 60)}:{(testTimeLeft % 60).toString().padStart(2, '0')}
@@ -586,7 +581,7 @@ const Lesson1 = ({ onPageChange }) => {
 
                       {/* Навигация по вопросам */}
                       <div className="mb-6">
-                        <h4 className="text-sm font-medium text-gray-700 mb-3">Переход к вопросу:</h4>
+                        <h4 className="text-sm font-medium text-gray-700 mb-3">{t('courses.lessons.goToQuestion')}</h4>
                         <div className="flex flex-wrap gap-2">
                           {testQuestions.map((_, index) => (
                             <button
@@ -671,7 +666,7 @@ const Lesson1 = ({ onPageChange }) => {
                         <CheckCircle className="w-8 h-8 text-green-600" />
                       </div>
                       <h3 className="text-lg font-semibold text-gray-900 mb-3">
-                        Тестирование завершено!
+                        {t('courses.lessons.testingCompleted')}
                       </h3>
                       <div className="bg-gray-50 rounded-lg p-6 mb-6">
                         <div className="text-3xl font-bold text-blue-600 mb-2">
@@ -729,7 +724,7 @@ const Lesson1 = ({ onPageChange }) => {
                     <div className="w-8 h-8 bg-blue-100 rounded-lg flex items-center justify-center">
                       <Code className="w-4 h-4 text-blue-600" />
                     </div>
-                    <h2 className="text-xl font-semibold text-gray-900">Решение задач</h2>
+                    <h2 className="text-xl font-semibold text-gray-900">{t('courses.lessons.problemSolving')}</h2>
                   </div>
 
                   {!practiceCompleted ? (
@@ -738,7 +733,7 @@ const Lesson1 = ({ onPageChange }) => {
                       <div className="mb-6">
                         <div className="flex items-center justify-between mb-4">
                           <h3 className="text-lg font-semibold text-gray-900">
-                            Задание {currentTaskIndex + 1} из {practiceTasks.length}
+                            {t('courses.lessons.task')} {currentTaskIndex + 1} {t('courses.lessons.of')} {practiceTasks.length}
                           </h3>
                           <div className="flex gap-2">
                             {practiceTasks.map((_, index) => (
@@ -782,7 +777,7 @@ const Lesson1 = ({ onPageChange }) => {
                             onClick={handleRunCode}
                             className="px-4 py-1 bg-green-600 hover:bg-green-700 text-white text-sm rounded-md transition-colors"
                           >
-                            ▶ Запустить
+                            ▶ {t('courses.lessons.run')}
                           </button>
                         </div>
                         
@@ -821,7 +816,7 @@ const Lesson1 = ({ onPageChange }) => {
                           className="px-4 py-2 bg-gray-200 text-gray-700 rounded-lg disabled:opacity-50 disabled:cursor-not-allowed hover:bg-gray-300 flex items-center gap-2"
                         >
                           <ChevronLeft className="w-4 h-4" />
-                          Назад
+                          {t('courses.lessons.back')}
                         </button>
                         
                         {currentTaskIndex === practiceTasks.length - 1 ? (
@@ -836,7 +831,7 @@ const Lesson1 = ({ onPageChange }) => {
                             onClick={() => handleTaskNavigation('next')}
                             className="px-4 py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg flex items-center gap-2"
                           >
-                            Далее
+                            {t('courses.lessons.next')}
                             <ChevronRight className="w-4 h-4" />
                           </button>
                         )}
@@ -876,13 +871,13 @@ const Lesson1 = ({ onPageChange }) => {
             <div className="sticky top-8 space-y-6">
               {/* Navigation */}
               <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Навигация</h3>
+                <h3 className="text-lg font-semibold text-gray-900 mb-4">{t('courses.lessons.navigation')}</h3>
                 <div className="space-y-2">
                   {[
-                    { id: 'video', label: 'Видеоурок', icon: PlayCircle },
-                    { id: 'theory', label: 'Теория', icon: FileText },
-                    { id: 'testing', label: 'Тестирование', icon: FileText },
-                    { id: 'practice', label: 'Решение задач', icon: Code }
+                    { id: 'video', label: t('courses.lessons.videoLesson'), icon: PlayCircle },
+                    { id: 'theory', label: t('courses.lessons.theory'), icon: FileText },
+                    { id: 'testing', label: t('courses.lessons.testing'), icon: FileText },
+                    { id: 'practice', label: t('courses.lessons.problemSolving'), icon: Code }
                   ].map((section) => (
                     <button
                       key={section.id}
@@ -900,36 +895,6 @@ const Lesson1 = ({ onPageChange }) => {
                 </div>
               </div>
 
-              {/* Lesson Progress */}
-              <div className="bg-white rounded-xl shadow-sm border border-gray-200 p-6">
-                <h3 className="text-lg font-semibold text-gray-900 mb-4">Прогресс урока</h3>
-                <div className="space-y-3">
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Видеоурок</span>
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Теория</span>
-                    <CheckCircle className="w-4 h-4 text-green-600" />
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Тестирование</span>
-                    {testCompleted ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-                    )}
-                  </div>
-                  <div className="flex items-center justify-between text-sm">
-                    <span className="text-gray-600">Решение задач</span>
-                    {practiceCompleted ? (
-                      <CheckCircle className="w-4 h-4 text-green-600" />
-                    ) : (
-                      <div className="w-4 h-4 border-2 border-gray-300 rounded-full"></div>
-                    )}
-                  </div>
-                </div>
-              </div>
 
             </div>
           </div>

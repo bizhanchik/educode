@@ -184,7 +184,7 @@ const ICTBasics = ({ onPageChange }) => {
     <div className="bg-gradient-to-b from-[#f9fafb] to-[#edf2f7] min-h-screen">
       {/* Back Button */}
       <div className="pt-16 sm:pt-20 md:pt-24">
-        <BackButton onClick={handleBackToCourses}>Назад к курсам</BackButton>
+        <BackButton onClick={handleBackToCourses}>{t('courses.backToCourses')}</BackButton>
       </div>
       
       {/* Hero Section */}
