@@ -33,6 +33,9 @@ const UserMenu = ({ onPageChange }) => {
   const [unreadCount, setUnreadCount] = useState(2);
   const menuRef = useRef(null);
 
+  const isTeacher = user?.role === 'teacher';
+  const isAdmin = user?.role === 'admin';
+
   // Загружаем уведомления при изменении пользователя
   useEffect(() => {
     if (user) {
@@ -113,6 +116,13 @@ const UserMenu = ({ onPageChange }) => {
     setIsOpen(false);
   };
 
+  const handleAdminDashboard = () => {
+    if (onPageChange) {
+      onPageChange('admin-dashboard');
+    }
+    setIsOpen(false);
+  };
+
   return (
     <div className="relative" ref={menuRef}>
       {/* Кнопка пользователя */}
@@ -174,14 +184,16 @@ const UserMenu = ({ onPageChange }) => {
 
               {/* Основные кнопки (сразу после данных пользователя) */}
               <div className="p-4 flex-1 flex flex-col justify-start space-y-2">
-                <motion.button
-                  onClick={handleMyCourses}
-                  className="w-full px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all duration-200 flex items-center gap-3"
-                  whileHover={{ x: 4 }}
-                >
-                  <BookOpen className="w-5 h-5" />
-                  {t('userMenu.myCourses')}
-                </motion.button>
+                {user.role !== 'admin' && (
+                  <motion.button
+                    onClick={handleMyCourses}
+                    className="w-full px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all duration-200 flex items-center gap-3"
+                    whileHover={{ x: 4 }}
+                  >
+                    <BookOpen className="w-5 h-5" />
+                    {t('userMenu.myCourses')}
+                  </motion.button>
+                )}
                 
                 <motion.button
                   onClick={handleNotifications}
@@ -205,6 +217,28 @@ const UserMenu = ({ onPageChange }) => {
                   <Calendar className="w-5 h-5" />
                   {t('userMenu.journal')}
                 </motion.button>
+
+                {isTeacher && (
+                  <motion.button
+                    onClick={handleTeacherDashboard}
+                    className="w-full px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all duration-200 flex items-center gap-3"
+                    whileHover={{ x: 4 }}
+                  >
+                    <PlayCircle className="w-5 h-5" />
+                    Кабинет преподавателя
+                  </motion.button>
+                )}
+
+                {isAdmin && (
+                  <motion.button
+                    onClick={handleAdminDashboard}
+                    className="w-full px-4 py-3 text-gray-700 hover:text-gray-900 hover:bg-gray-200/50 rounded-lg transition-all duration-200 flex items-center gap-3"
+                    whileHover={{ x: 4 }}
+                  >
+                    <User className="w-5 h-5" />
+                    Админ-панель
+                  </motion.button>
+                )}
               </div>
 
               {/* Настройки и выход (внизу) */}

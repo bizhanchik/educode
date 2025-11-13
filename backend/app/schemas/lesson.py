@@ -22,6 +22,7 @@ class LessonCreate(LessonBase):
     pass
 
 
+
 class LessonRead(LessonBase):
     """
     Schema for reading lesson data.

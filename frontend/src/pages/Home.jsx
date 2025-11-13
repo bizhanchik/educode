@@ -87,7 +87,7 @@ const Home = ({ onOpenModal, onPageChange }) => {
         <div className="max-w-6xl mx-auto">
           <div className="text-center max-w-xs mx-auto">
             <p className="text-gray-500 text-xs sm:text-sm mb-1 sm:mb-2">EduCode © 2025</p>
-            <p className="text-gray-400 text-xs">Все права защищены</p>
+            <p className="text-gray-400 text-xs">По всем вопросам обращаться в телеграм @bizhanchikk</p>
           </div>
         </div>
       </footer>
