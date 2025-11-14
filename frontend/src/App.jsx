@@ -42,6 +42,7 @@ const AppContent = () => {
 
   const [currentPage, setCurrentPage] = useState('home');
   const [guardMessage, setGuardMessage] = useState('');
+  const [pageParams, setPageParams] = useState({});
   const { user, isAuthenticated, loading } = useAuth();
 
   const handleOpenModal = useCallback((type) => {
@@ -65,7 +66,7 @@ const AppContent = () => {
     });
   };
 
-  const handlePageChange = useCallback((page) => {
+  const handlePageChange = useCallback((page, params = {}) => {
     const routeRule = ROUTE_RULES[page] || ROUTE_RULES.home;
     const isPublic = !!routeRule?.isPublic;
 
@@ -81,6 +82,7 @@ const AppContent = () => {
     }
 
     setGuardMessage('');
+    setPageParams(params || {});
     setCurrentPage(page);
   }, [isAuthenticated, user, handleOpenModal]);
 
@@ -91,6 +93,7 @@ const AppContent = () => {
       const routeRule = ROUTE_RULES[currentPage];
       if (routeRule && !routeRule.isPublic) {
         setCurrentPage('home');
+        setPageParams({});
       }
       return;
     }
@@ -98,21 +101,23 @@ const AppContent = () => {
     const routeRule = ROUTE_RULES[currentPage];
     if (!routeRule) {
       setCurrentPage(getLandingPageForRole(user.role));
+      setPageParams({});
       return;
     }
 
     if (routeRule.roles && !routeRule.roles.includes(user.role)) {
       const landing = getLandingPageForRole(user.role);
       setCurrentPage(landing);
+      setPageParams({});
     }
   }, [user, loading, currentPage]);
 
   const renderCurrentPage = () => {
     switch (currentPage) {
       case 'courses':
-        return <MyCourses onPageChange={handlePageChange} />;
+        return <MyCourses onPageChange={handlePageChange} pageParams={pageParams} />;
       case 'programming-basics':
-        return <ProgrammingBasics onPageChange={handlePageChange} />;
+        return <ProgrammingBasics onPageChange={handlePageChange} pageParams={pageParams} />;
       case 'lesson-1':
         return <Lesson1 onPageChange={handlePageChange} />;
       case 'lesson-2':

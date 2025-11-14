@@ -1,69 +1,177 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback, useMemo } from 'react';
 import { motion } from 'framer-motion';
-import { 
-  BookOpen, 
-  Plus, 
-  Users, 
-  BarChart3, 
-  Settings, 
-  LogOut,
-  Bell,
-  Edit,
-  Eye,
-  CheckCircle,
-  XCircle,
-  Save,
-  Trash2,
-  UserCog,
-  GraduationCap
+import {
+  BookOpen,
+  GraduationCap,
+  RefreshCw,
+  FolderTree,
+  FileText,
+  PlayCircle,
+  Upload,
+  Type
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.jsx';
-import { useLanguage } from '../i18n.jsx';
-import { getTeacherCourses, updateCourse } from '../utils/auth.js';
+import {
+  fetchLessons,
+  fetchSubjects,
+  createLesson,
+  createLessonMaterial
+} from '../utils/curriculumApi.js';
+
+const initialLessonForm = {
+  title: '',
+  description: '',
+  subjectId: '',
+  videoUrl: '',
+  videoDescription: '',
+  textMaterialTitle: 'Текстовый материал',
+  textMaterialContent: '',
+  fileMaterialTitle: 'Файл с материалами',
+  fileMaterialFile: null
+};
 
 const TeacherDashboard = ({ onPageChange }) => {
-  const { t } = useLanguage();
-  const { user, logout } = useAuth();
-  const [currentView, setCurrentView] = useState('groups');
+  const { user } = useAuth();
+  const [subjects, setSubjects] = useState([]);
+  const [lessons, setLessons] = useState([]);
   const [loading, setLoading] = useState(true);
-  const [courses, setCourses] = useState([]);
-  const [editingCourse, setEditingCourse] = useState(null);
-  const [editingLesson, setEditingLesson] = useState(null);
-  const [newLessonTitle, setNewLessonTitle] = useState('');
-  const [newLessonDescription, setNewLessonDescription] = useState('');
+  const [error, setError] = useState('');
 
-  useEffect(() => {
-    const loadTeacherCourses = async () => {
-      setLoading(true);
-      try {
-        console.log('Teacher ID:', user?.teacherId);
-        console.log('User:', user);
-        
-        // Получаем курсы преподавателя
-        const teacherCourses = getTeacherCourses(user?.teacherId);
-        console.log('Teacher courses:', teacherCourses);
-        
-        setCourses(teacherCourses);
-      } catch (error) {
-        console.error('Ошибка загрузки курсов:', error);
-      } finally {
-        setLoading(false);
-      }
-    };
+  const [lessonForm, setLessonForm] = useState(initialLessonForm);
+  const [formError, setFormError] = useState('');
+  const [formSuccess, setFormSuccess] = useState('');
+  const [formLoading, setFormLoading] = useState(false);
 
-    if (user?.teacherId) {
-      loadTeacherCourses();
-    } else {
-      console.log('No teacherId found for user:', user);
+  const loadData = useCallback(async () => {
+    setLoading(true);
+    setError('');
+    try {
+      const [subjectsResponse, lessonsResponse] = await Promise.all([
+        fetchSubjects({ size: 100 }),
+        fetchLessons({ size: 100 })
+      ]);
+      setSubjects(subjectsResponse.data?.subjects || []);
+      setLessons(lessonsResponse.data?.lessons || []);
+    } catch (err) {
+      setError(err.message || 'Не удалось загрузить данные преподавателя');
+    } finally {
       setLoading(false);
     }
-  }, [user]);
+  }, []);
+
+  useEffect(() => {
+    if (user?.role === 'teacher') {
+      loadData();
+    }
+  }, [user, loadData]);
+
+  const lessonsBySubject = useMemo(
+    () =>
+      lessons.reduce((acc, lesson) => {
+        if (!acc[lesson.subject_id]) acc[lesson.subject_id] = [];
+        acc[lesson.subject_id].push(lesson);
+        return acc;
+      }, {}),
+    [lessons]
+  );
+
+  const subjectsWithLessons = useMemo(
+    () =>
+      subjects
+        .filter((subject) => lessonsBySubject[subject.id])
+        .map((subject) => ({
+          ...subject,
+          lessons: lessonsBySubject[subject.id]
+        })),
+    [subjects, lessonsBySubject]
+  );
+
+  const handleLessonInputChange = (field, value) => {
+    setLessonForm((prev) => ({
+      ...prev,
+      [field]: value
+    }));
+  };
+
+  const handleLessonFileChange = (event) => {
+    const file = event.target.files?.[0] || null;
+    setLessonForm((prev) => ({
+      ...prev,
+      fileMaterialFile: file
+    }));
+  };
+
+  const handleCreateLesson = async (event) => {
+    event.preventDefault();
+    setFormError('');
+    setFormSuccess('');
+
+    if (!lessonForm.title.trim()) {
+      setFormError('Введите название урока');
+      return;
+    }
+    if (!lessonForm.subjectId) {
+      setFormError('Выберите предмет');
+      return;
+    }
+
+    setFormLoading(true);
+    try {
+      const payload = {
+        title: lessonForm.title.trim(),
+        description: lessonForm.description.trim() || null,
+        subject_id: Number(lessonForm.subjectId),
+        teacher_id: user.id,
+        video_url: lessonForm.videoUrl.trim() || null,
+        video_description: lessonForm.videoDescription.trim() || null
+      };
+
+      const response = await createLesson(payload);
+      const newLesson = response.data;
+
+      const materialPromises = [];
+
+      if (lessonForm.textMaterialContent.trim()) {
+        const textForm = new FormData();
+        textForm.append('title', lessonForm.textMaterialTitle.trim() || 'Текстовый материал');
+        textForm.append('type', 'text');
+        textForm.append('content', lessonForm.textMaterialContent.trim());
+        materialPromises.push(createLessonMaterial(newLesson.id, textForm));
+      }
+
+      if (lessonForm.fileMaterialFile) {
+        const fileForm = new FormData();
+        fileForm.append(
+          'title',
+          lessonForm.fileMaterialTitle.trim() || lessonForm.fileMaterialFile.name
+        );
+        fileForm.append('type', 'file');
+        fileForm.append('file', lessonForm.fileMaterialFile);
+        materialPromises.push(createLessonMaterial(newLesson.id, fileForm));
+      }
+
+      if (materialPromises.length) {
+        await Promise.all(materialPromises);
+      }
+
+      setFormSuccess('Урок успешно создан и материалы прикреплены.');
+      setLessonForm(initialLessonForm);
+      loadData();
+    } catch (err) {
+      setFormError(err.message || 'Не удалось создать урок');
+    } finally {
+      setFormLoading(false);
+    }
+  };
 
   if (!user || user.role !== 'teacher') {
     return (
       <div className="max-w-4xl mx-auto mt-28 mb-12 bg-white/80 backdrop-blur rounded-2xl shadow-lg border border-gray-100 p-8 text-center">
         <h2 className="text-2xl font-semibold text-gray-900 mb-4">Доступ ограничен</h2>
-        <p className="text-gray-600">Страница доступна только для преподавателей. Пожалуйста, войдите под учетной записью преподавателя.</p>
+        <p className="text-gray-600">
+          Страница доступна только для преподавателей. Пожалуйста, войдите под учетной записью
+          преподавателя.
+        </p>
       </div>
     );
   }
@@ -394,74 +502,306 @@ const TeacherDashboard = ({ onPageChange }) => {
     }
   };
 
+
   return (
-    <section className="min-h-screen bg-gray-50 pt-20 pb-12 px-4 sm:px-6 md:px-8">
+    <section className="min-h-screen bg-gray-50 pt-20 sm:pt-24 md:pt-28 pb-12 px-4 sm:px-6 md:px-8">
       <div className="max-w-7xl mx-auto">
-        {/* Header */}
-        <div className="mb-8">
-          <motion.h1
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6 }}
-            className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-4 text-center"
-          >
-            Панель преподавателя
-          </motion.h1>
-          <div className="text-center">
-            <p className="text-gray-600 mb-2">
-              Добро пожаловать, <span className="font-semibold">{user?.fullName || 'Преподаватель'}</span>
+        <div className="flex flex-wrap gap-4 items-center justify-between mb-8">
+          <div>
+            <h1 className="text-3xl sm:text-4xl md:text-5xl font-bold text-gray-900 mb-2">
+              Кабинет преподавателя
+            </h1>
+            <p className="text-gray-600">
+              Добро пожаловать, {user?.fullName || user?.name || 'Преподаватель'}
             </p>
-            <p className="text-sm text-gray-500">Преподаватель</p>
           </div>
+          <button
+            onClick={loadData}
+            className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+          >
+            <RefreshCw className="w-4 h-4" />
+            Обновить данные
+          </button>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-6 md:gap-8">
-          {/* Sidebar Navigation */}
-          <motion.div
-            initial={{ opacity: 0, x: -20 }}
-            animate={{ opacity: 1, x: 0 }}
-            transition={{ duration: 0.6, delay: 0.2 }}
-            className="md:col-span-1 bg-white rounded-lg shadow-md p-6 h-fit"
-          >
-            <h2 className="text-xl font-semibold text-gray-800 mb-4">Навигация</h2>
-            <ul className="space-y-2">
-              {teacherNavItems.map(item => (
-                <li key={item.id}>
-                  <motion.button
-                    onClick={() => item.id === 'logout' ? logout() : setCurrentView(item.id)}
-                    className={`flex items-center gap-3 w-full text-left px-4 py-3 rounded-md transition-colors duration-200 ${
-                      currentView === item.id 
-                        ? 'bg-blue-100 text-blue-700 border-l-4 border-blue-700' 
-                        : 'text-gray-700 hover:text-blue-600 hover:bg-blue-50'
-                    }`}
-                    whileHover={{ x: 5 }}
+        {error && (
+          <div className="mb-6 rounded-2xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+            {error}
+          </div>
+        )}
+
+        <CreateLessonCard
+          subjects={subjects}
+          formState={lessonForm}
+          onChange={handleLessonInputChange}
+          onFileChange={handleLessonFileChange}
+          onSubmit={handleCreateLesson}
+          loading={formLoading}
+          error={formError}
+          success={formSuccess}
+        />
+
+        {loading ? (
+          <div className="text-center text-gray-500 py-24">Загрузка материалов...</div>
+        ) : (
+          <>
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+              <StatsCard
+                icon={GraduationCap}
+                title="Всего уроков"
+                value={lessons.length}
+                accent="bg-indigo-100 text-indigo-600"
+              />
+              <StatsCard
+                icon={FolderTree}
+                title="Предметов"
+                value={subjectsWithLessons.length}
+                accent="bg-blue-100 text-blue-600"
+              />
+              <StatsCard
+                icon={BookOpen}
+                title="Уроков без описания"
+                value={lessons.filter((lesson) => !lesson.description).length}
+                accent="bg-amber-100 text-amber-600"
+              />
+            </div>
+
+            {subjectsWithLessons.length === 0 ? (
+              <div className="rounded-3xl border border-dashed border-gray-300 bg-white p-12 text-center text-gray-500">
+                Для вас пока не создано уроков. Создайте новый урок через форму выше.
+              </div>
+            ) : (
+              <div className="space-y-8">
+                {subjectsWithLessons.map((subject) => (
+                  <motion.div
+                    key={subject.id}
+                    initial={{ opacity: 0, y: 20 }}
+                    animate={{ opacity: 1, y: 0 }}
+                    className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6"
                   >
-                    <item.icon className="w-5 h-5" />
-                    {item.label}
-                    {item.count > 0 && (
-                      <span className="ml-auto bg-red-500 text-white text-xs rounded-full px-2 py-1 min-w-[20px] text-center">
-                        {item.count}
-                      </span>
-                    )}
-                  </motion.button>
-                </li>
-              ))}
-            </ul>
-          </motion.div>
+                    <div className="flex flex-wrap items-center justify-between gap-4 mb-6">
+                      <div>
+                        <p className="text-sm text-gray-500 uppercase tracking-wide">Предмет</p>
+                        <h2 className="text-2xl font-bold text-gray-900">{subject.name}</h2>
+                        <p className="text-gray-500 mt-1">
+                          {subject.lessons.length} урок(а/ов) в этом предмете
+                        </p>
+                      </div>
+                      <button
+                        onClick={() =>
+                          onPageChange?.('programming-basics', { subjectId: subject.id })
+                        }
+                        className="inline-flex items-center gap-2 px-4 py-2 rounded-xl bg-blue-600 text-white hover:bg-blue-700 transition-colors"
+                      >
+                        <PlayCircle className="w-4 h-4" />
+                        Открыть курс
+                      </button>
+                    </div>
 
-          {/* Main Content Area */}
-          <motion.div
-            initial={{ opacity: 0, y: 20 }}
-            animate={{ opacity: 1, y: 0 }}
-            transition={{ duration: 0.6, delay: 0.4 }}
-            className="md:col-span-3"
-          >
-            {renderContent()}
-          </motion.div>
-        </div>
+                    <div className="space-y-4">
+                      {subject.lessons.map((lesson) => (
+                        <div
+                          key={lesson.id}
+                          className="rounded-2xl border border-gray-100 p-4 bg-gray-50 hover:bg-white transition-colors"
+                        >
+                          <div className="flex flex-col md:flex-row md:items-center md:justify-between gap-4">
+                            <div>
+                              <p className="text-sm text-gray-500">Урок #{lesson.id}</p>
+                              <h3 className="text-xl font-semibold text-gray-900">
+                                {lesson.title}
+                              </h3>
+                              <p className="text-gray-600 mt-1">
+                                {lesson.description || 'Описание урока ещё не добавлено.'}
+                              </p>
+                              {lesson.video_url && (
+                                <p className="text-sm text-blue-600 mt-2">
+                                  Видео: {lesson.video_url}
+                                </p>
+                              )}
+                            </div>
+                            <div className="flex gap-3">
+                              <button
+                                onClick={() =>
+                                  onPageChange?.('lesson-1', {
+                                    subjectId: subject.id,
+                                    lessonId: lesson.id
+                                  })
+                                }
+                                className="inline-flex items-center gap-2 px-4 py-2 rounded-xl border border-gray-200 text-gray-700 hover:bg-gray-100 transition-colors"
+                              >
+                                <FileText className="w-4 h-4" />
+                                Открыть
+                              </button>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </motion.div>
+                ))}
+              </div>
+            )}
+          </>
+        )}
       </div>
     </section>
   );
 };
+
+const CreateLessonCard = ({
+  subjects,
+  formState,
+  onChange,
+  onFileChange,
+  onSubmit,
+  loading,
+  error,
+  success
+}) => (
+  <motion.div
+    initial={{ opacity: 0, y: 20 }}
+    animate={{ opacity: 1, y: 0 }}
+    className="bg-white rounded-3xl shadow-sm border border-gray-100 p-6 mb-10"
+  >
+    <h2 className="text-2xl font-bold text-gray-900 mb-4">Создать новый урок</h2>
+    <p className="text-gray-600 mb-6">
+      Добавьте видеоурок и материалы, чтобы они стали доступны студентам на соответствующих
+      страницах.
+    </p>
+
+    <form className="space-y-5" onSubmit={onSubmit}>
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Предмет</label>
+          <select
+            value={formState.subjectId}
+            onChange={(e) => onChange('subjectId', e.target.value)}
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          >
+            <option value="">Выберите предмет</option>
+            {subjects.map((subject) => (
+              <option key={subject.id} value={subject.id}>
+                {subject.name}
+              </option>
+            ))}
+          </select>
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Название урока</label>
+          <input
+            value={formState.title}
+            onChange={(e) => onChange('title', e.target.value)}
+            placeholder="Например, Введение в Python"
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div>
+        <label className="block text-sm font-medium text-gray-700 mb-1">Описание урока</label>
+        <textarea
+          value={formState.description}
+          onChange={(e) => onChange('description', e.target.value)}
+          rows={3}
+          className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          placeholder="Кратко опишите, чему научатся студенты."
+        />
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Ссылка на видеоурок</label>
+          <input
+            value={formState.videoUrl}
+            onChange={(e) => onChange('videoUrl', e.target.value)}
+            placeholder="https://youtu.be/..."
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">Описание видео</label>
+          <input
+            value={formState.videoDescription}
+            onChange={(e) => onChange('videoDescription', e.target.value)}
+            placeholder="Например, длительность и основные темы"
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+        </div>
+      </div>
+
+      <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <Type className="w-4 h-4 text-gray-400" />
+            Текстовый материал
+          </label>
+          <input
+            value={formState.textMaterialTitle}
+            onChange={(e) => onChange('textMaterialTitle', e.target.value)}
+            placeholder="Заголовок материала"
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <textarea
+            value={formState.textMaterialContent}
+            onChange={(e) => onChange('textMaterialContent', e.target.value)}
+            rows={3}
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+            placeholder="Добавьте текстовый конспект или инструкции"
+          />
+        </div>
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1 flex items-center gap-2">
+            <Upload className="w-4 h-4 text-gray-400" />
+            Файл с материалами
+          </label>
+          <input
+            value={formState.fileMaterialTitle}
+            onChange={(e) => onChange('fileMaterialTitle', e.target.value)}
+            placeholder="Название файла"
+            className="w-full rounded-xl border border-gray-200 px-4 py-2 mb-2 focus:ring-2 focus:ring-blue-500 focus:border-transparent"
+          />
+          <input
+            type="file"
+            onChange={handleLessonFileChange}
+            className="w-full text-sm text-gray-500 file:mr-4 file:py-2 file:px-4 file:rounded-xl file:border-0 file:text-sm file:font-semibold file:bg-blue-50 file:text-blue-600 hover:file:bg-blue-100"
+          />
+        </div>
+      </div>
+
+      {error && (
+        <div className="rounded-xl border border-red-200 bg-red-50 px-4 py-3 text-sm text-red-800">
+          {error}
+        </div>
+      )}
+      {success && (
+        <div className="rounded-xl border border-green-200 bg-green-50 px-4 py-3 text-sm text-green-800">
+          {success}
+        </div>
+      )}
+
+      <div className="flex justify-end">
+        <button
+          type="submit"
+          disabled={loading}
+          className="inline-flex items-center gap-2 px-6 py-3 rounded-2xl bg-blue-600 text-white font-semibold hover:bg-blue-700 transition-all disabled:opacity-60"
+        >
+          {loading ? 'Сохраняем...' : 'Создать урок'}
+        </button>
+      </div>
+    </form>
+  </motion.div>
+);
+
+const StatsCard = ({ icon: Icon, title, value, accent }) => (
+  <div className="bg-white rounded-3xl border border-gray-100 p-6 flex items-center gap-4">
+    <div className={`w-12 h-12 rounded-2xl flex items-center justify-center ${accent}`}>
+      <Icon className="w-6 h-6" />
+    </div>
+    <div>
+      <p className="text-sm text-gray-500">{title}</p>
+      <p className="text-3xl font-bold text-gray-900">{value}</p>
+    </div>
+  </div>
+);
 
 export default TeacherDashboard;
