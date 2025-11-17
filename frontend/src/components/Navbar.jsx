@@ -79,18 +79,48 @@ const Navbar = ({ onOpenModal, onPageChange, currentPage }) => {
             {/* Навигационные ссылки */}
             <div className="hidden md:flex items-center space-x-6">
               <button
-                onClick={() => onPageChange?.('home')}
-                className={`text-sm font-medium transition-colors hover:opacity-80 ${
-                  currentPage === 'home' ? 'text-blue-600' : 'text-gray-700 hover:text-gray-900'
-                }`}
+                onClick={() => {
+                  if (currentPage === 'home') {
+                    // Прокручиваем к секции "О проекте"
+                    const aboutSection = document.getElementById('about');
+                    if (aboutSection) {
+                      aboutSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  } else {
+                    onPageChange?.('home');
+                    // Ждем немного и прокручиваем
+                    setTimeout(() => {
+                      const aboutSection = document.getElementById('about');
+                      if (aboutSection) {
+                        aboutSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
+                  }
+                }}
+                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors hover:opacity-80"
               >
                 {t('navbar.about')}
               </button>
               <button
-                onClick={() => onPageChange?.('courses')}
-                className={`text-sm font-medium transition-colors hover:opacity-80 ${
-                  currentPage === 'courses' ? 'text-blue-600' : 'text-gray-700 hover:text-gray-900'
-                }`}
+                onClick={() => {
+                  if (currentPage === 'home') {
+                    // Прокручиваем к футеру "Важно"
+                    const contactsSection = document.getElementById('contacts');
+                    if (contactsSection) {
+                      contactsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                    }
+                  } else {
+                    onPageChange?.('home');
+                    // Ждем немного и прокручиваем
+                    setTimeout(() => {
+                      const contactsSection = document.getElementById('contacts');
+                      if (contactsSection) {
+                        contactsSection.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                      }
+                    }, 100);
+                  }
+                }}
+                className="text-sm font-medium text-gray-700 hover:text-gray-900 transition-colors hover:opacity-80"
               >
                 {t('navbar.contacts')}
               </button>
@@ -122,7 +152,7 @@ const Navbar = ({ onOpenModal, onPageChange, currentPage }) => {
                 >
                   {t('navbar.signin')}
                 </motion.button>
-                {/* <motion.button
+                <motion.button
                   className="px-3 sm:px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base"
                   onClick={() => onOpenModal('signup')}
                   whileHover={{ scale: 1.03 }}
@@ -130,7 +160,7 @@ const Navbar = ({ onOpenModal, onPageChange, currentPage }) => {
                 >
                   <span className="hidden sm:inline">{t('navbar.signup')}</span>
                   <span className="sm:hidden">{t('navbar.signupMobile')}</span>
-                </motion.button> */}
+                </motion.button>
               </>
             )}
           </div>

@@ -511,6 +511,7 @@ const en = {
     "contacts": "Important",
     "signin": "Sign In",
     "signup": "Sign Up",
+    "signupMobile": "Sign Up",
     "language": "Language"
   },
   "hero": {

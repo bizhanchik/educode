@@ -26,6 +26,7 @@ const AnimatedBackground = () => {
         }}
       />
       
+      
       <motion.div 
         className="absolute bottom-[-10%] right-[-5%] w-[50%] h-[50%] rounded-full bg-gradient-to-l from-accent-green/10 to-accent-blue/5 blur-3xl"
         animate={{

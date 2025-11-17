@@ -13,7 +13,10 @@ import os
 import sys
 
 # Add the project root to the path
-sys.path.append(os.path.dirname(os.path.dirname(__file__)))
+# Add /app to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Add /app/app to path
+sys.path.append(os.path.abspath(os.path.join(os.path.dirname(__file__), "..", "app")))
 
 from app.core.config import get_settings
 from app.core.database import Base
