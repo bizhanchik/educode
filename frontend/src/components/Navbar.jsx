@@ -143,25 +143,14 @@ const Navbar = ({ onOpenModal, onPageChange, currentPage }) => {
                        <UserMenu onPageChange={onPageChange} />
                      </>
                    ) : (
-              <>
                 <motion.button 
-                  className="px-3 sm:px-4 py-2 rounded-xl border border-gray-300 bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300 text-sm sm:text-base"
+                  className="px-3 sm:px-4 py-2 rounded-xl border border-gray-300 bg-white/40 backdrop-blur-md text-gray-700 hover:bg-white/70 transition-all duration-300 text-sm sm:text-base ml-2"
                   onClick={() => onOpenModal('login')}
                   whileHover={{ scale: 1.03 }}
                   whileTap={{ scale: 0.98 }}
                 >
                   {t('navbar.signin')}
                 </motion.button>
-                <motion.button
-                  className="px-3 sm:px-4 py-2 rounded-xl bg-blue-600 hover:bg-blue-700 text-white font-medium shadow-md hover:shadow-lg transition-all duration-300 text-sm sm:text-base"
-                  onClick={() => onOpenModal('signup')}
-                  whileHover={{ scale: 1.03 }}
-                  whileTap={{ scale: 0.98 }}
-                >
-                  <span className="hidden sm:inline">{t('navbar.signup')}</span>
-                  <span className="sm:hidden">{t('navbar.signupMobile')}</span>
-                </motion.button>
-              </>
             )}
           </div>
           
