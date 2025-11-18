@@ -40,8 +40,8 @@ class Settings(BaseSettings):
     
     # Database Settings
     # DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
-    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/edu_code"
-    
+    # DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/edu_code"
+    DATABASE_URL: str
     DATABASE_ECHO: bool = False  # Set to True for SQL query logging
     
     # Redis Settings (for Celery)
@@ -106,7 +106,7 @@ class Settings(BaseSettings):
         return v
     
     class Config:
-        env_file = ".env"
+        env_file = ".env.local" if os.getenv("ENV") == "local" else ".env.docker"
         env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"  # Allow extra fields in .env file
