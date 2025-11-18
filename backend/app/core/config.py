@@ -39,7 +39,9 @@ class Settings(BaseSettings):
     ]
     
     # Database Settings
-    DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
+    # DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
+    DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/edu_code"
+    
     DATABASE_ECHO: bool = False  # Set to True for SQL query logging
     
     # Redis Settings (for Celery)
