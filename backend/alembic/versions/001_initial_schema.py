@@ -35,27 +35,44 @@ depends_on: Union[str, Sequence[str], None] = None
 def upgrade() -> None:
     # Step 1: Create ENUM types
     # These must be created first as they are used by table columns
+    # Using IF NOT EXISTS to avoid conflicts with existing types
 
     # UserRole enum
     op.execute("""
-        CREATE TYPE userrole AS ENUM ('ADMIN', 'TEACHER', 'STUDENT')
+        DO $$ BEGIN
+            CREATE TYPE userrole AS ENUM ('ADMIN', 'TEACHER', 'STUDENT');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # ProgrammingLanguage enum
     op.execute("""
-        CREATE TYPE programminglanguage AS ENUM (
-            'PYTHON', 'JAVA', 'JAVASCRIPT', 'CPP', 'C', 'CSHARP', 'GO', 'RUST'
-        )
+        DO $$ BEGIN
+            CREATE TYPE programminglanguage AS ENUM (
+                'PYTHON', 'JAVA', 'JAVASCRIPT', 'CPP', 'C', 'CSHARP', 'GO', 'RUST'
+            );
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # AIProvider enum
     op.execute("""
-        CREATE TYPE aiprovider AS ENUM ('OPENAI', 'ANTHROPIC')
+        DO $$ BEGIN
+            CREATE TYPE aiprovider AS ENUM ('OPENAI', 'ANTHROPIC');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # MaterialType enum
     op.execute("""
-        CREATE TYPE materialtype AS ENUM ('TEXT', 'FILE', 'YOUTUBE')
+        DO $$ BEGIN
+            CREATE TYPE materialtype AS ENUM ('TEXT', 'FILE', 'YOUTUBE');
+        EXCEPTION
+            WHEN duplicate_object THEN null;
+        END $$;
     """)
 
     # Step 2: Create groups table (no dependencies)
