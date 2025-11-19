@@ -39,8 +39,6 @@ class Lesson(Base):
     # Lesson information
     title = Column(String(255), nullable=False, index=True)
     description = Column(Text, nullable=True)
-    video_url = Column(String(1024), nullable=True)
-    video_description = Column(Text, nullable=True)
     
     # Foreign keys
     subject_id = Column(Integer, ForeignKey("subjects.id"), nullable=False, index=True)

@@ -76,7 +76,6 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
         return response
 
 
-
 # Add middleware (order matters - last added is executed first)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)

@@ -31,17 +31,10 @@ class Settings(BaseSettings):
     
     # Security Settings
     SECRET_KEY: str = "your-secret-key-change-in-production"
-    ALLOWED_ORIGINS: List[str] = [
-        "http://localhost:3000",
-        "http://localhost:8080",
-        "http://localhost:5173",
-        "http://127.0.0.1:5173"
-    ]
+    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
     
     # Database Settings
-    # DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
-    # DATABASE_URL: str = "postgresql://postgres:postgres@localhost:5432/edu_code"
-    DATABASE_URL: str
+    DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
     DATABASE_ECHO: bool = False  # Set to True for SQL query logging
     
     # Redis Settings (for Celery)
@@ -86,9 +79,9 @@ class Settings(BaseSettings):
     
     @validator("ALLOWED_ORIGINS", pre=True)
     def parse_cors_origins(cls, v):
-        """Parse CORS origins from comma-separated string or list."""
+        """Parse CORS origins from string or list."""
         if isinstance(v, str):
-            return [origin.strip() for origin in v.split(",") if origin.strip()]
+            return [origin.strip() for origin in v.split(",")]
         return v
     
     @validator("ALLOWED_FILE_EXTENSIONS", pre=True)
@@ -106,7 +99,7 @@ class Settings(BaseSettings):
         return v
     
     class Config:
-        env_file = ".env.local" if os.getenv("ENV") == "local" else ".env.docker"
+        env_file = ".env"
         env_file_encoding = "utf-8"
         case_sensitive = True
         extra = "ignore"  # Allow extra fields in .env file

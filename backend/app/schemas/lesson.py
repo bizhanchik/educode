@@ -14,15 +14,12 @@ class LessonBase(BaseModel):
     title: str = Field(..., min_length=1, max_length=255, description="Lesson title")
     description: Optional[str] = Field(None, description="Lesson description")
     subject_id: int = Field(..., description="Subject ID")
-    teacher_id: Optional[int] = Field(None, description="Teacher ID")
-    video_url: Optional[str] = Field(None, description="Video lesson URL")
-    video_description: Optional[str] = Field(None, description="Video description or summary")
+    teacher_id: int = Field(..., description="Teacher ID")
 
 
 class LessonCreate(LessonBase):
     """Schema for creating a new lesson."""
     pass
-
 
 
 class LessonRead(LessonBase):
@@ -48,9 +45,6 @@ class LessonUpdate(BaseModel):
     title: Optional[str] = Field(None, min_length=1, max_length=255)
     description: Optional[str] = Field(None)
     subject_id: Optional[int] = Field(None)
-    teacher_id: Optional[int] = Field(None)
-    video_url: Optional[str] = Field(None)
-    video_description: Optional[str] = Field(None)
 
 
 class LessonList(BaseModel):

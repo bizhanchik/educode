@@ -24,5 +24,5 @@ __all__ = [
     "Task",
     "Submission",
     "Evaluation",
-    "AISolution",
+    "AISolution"
 ]

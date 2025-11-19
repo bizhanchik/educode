@@ -12,25 +12,16 @@ from alembic import context
 import os
 import sys
 
-# Add the project root to the path - use insert(0) to prioritize local imports
-sys.path.insert(0, os.path.abspath(os.path.join(os.path.dirname(__file__), "..")))
+# Add the project root to the path
+sys.path.append(os.path.dirname(os.path.dirname(__file__)))
 
 from app.core.config import get_settings
 from app.core.database import Base
 
-# Import ALL models so Alembic can detect them
-# CRITICAL: Must import ALL models before target_metadata is used
-# Order doesn't matter for imports, but importing everything is critical
+# Import all models so Alembic can detect them
 from app.models import (
-    User,
-    Group,
-    Subject,
-    Lesson,
-    LessonMaterial,
-    Task,
-    Submission,
-    Evaluation,
-    AISolution
+    User, Group, Subject, Lesson, Task, 
+    Submission, Evaluation, AISolution
 )
 
 # this is the Alembic Config object, which provides

@@ -37,20 +37,9 @@ async def create_lesson(
     """
     try:
         # Auto-set teacher_id to current user for teachers
-        lesson_dict = lesson_data.model_dump(exclude_unset=True)
-        if not lesson_dict.get("teacher_id"):
-            if current_user.role == "teacher":
-                lesson_dict["teacher_id"] = current_user.id
-            else:
-                raise HTTPException(
-                    status_code=400,
-                    detail="teacher_id is required when creating lessons as admin"
-                )
-        elif current_user.role == "teacher" and lesson_dict["teacher_id"] != current_user.id:
-            raise HTTPException(
-                status_code=403,
-                detail="Access denied: teachers can only create lessons for themselves"
-            )
+        lesson_dict = lesson_data.model_dump()
+        if current_user.role == "teacher":
+            lesson_dict["teacher_id"] = current_user.id
         
         # Create new lesson
         lesson = Lesson(**lesson_dict)
@@ -67,8 +56,6 @@ async def create_lesson(
                 description=lesson.description,
                 subject_id=lesson.subject_id,
                 teacher_id=lesson.teacher_id,
-                video_url=lesson.video_url,
-                video_description=lesson.video_description,
                 created_at=lesson.created_at,
                 updated_at=lesson.updated_at,
             ),
@@ -259,14 +246,8 @@ async def update_lesson(
         if current_user.role == "teacher" and lesson.teacher_id != current_user.id:
             raise HTTPException(status_code=403, detail="Access denied: You can only update your own lessons")
         
+        # Update lesson fields
         update_data = lesson_data.model_dump(exclude_unset=True)
-
-        if "teacher_id" in update_data and current_user.role == "teacher":
-            raise HTTPException(
-                status_code=403,
-                detail="Teachers cannot reassign lessons to other teachers"
-            )
-
         for field, value in update_data.items():
             setattr(lesson, field, value)
         
