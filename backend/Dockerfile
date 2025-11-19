@@ -52,16 +52,18 @@ COPY --from=deps /opt/venv /opt/venv
     
 WORKDIR /app
 COPY . .
-    
+
 RUN mkdir -p /app/logs /app/uploads && \
+    chmod +x /app/entrypoint.sh && \
     chown -R educode:educode /app
-    
+
 USER educode
-    
+
 EXPOSE 8000
-    
+
 HEALTHCHECK --interval=30s --timeout=30s --start-period=5s --retries=3 \
     CMD curl -f http://localhost:8000/api/v1/health || exit 1
-    
+
+ENTRYPOINT ["/app/entrypoint.sh"]
 CMD ["uvicorn", "app.main:app", "--host", "0.0.0.0", "--port", "8000", "--reload"]
     

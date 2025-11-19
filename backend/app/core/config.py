@@ -39,8 +39,16 @@ class Settings(BaseSettings):
     
     # Redis Settings (for Celery)
     REDIS_URL: str = "redis://localhost:6379/0"
-    CELERY_BROKER_URL: str = "redis://localhost:6379/0"
-    CELERY_RESULT_BACKEND: str = "redis://localhost:6379/0"
+
+    @property
+    def CELERY_BROKER_URL(self) -> str:
+        """Use REDIS_URL for Celery broker if not explicitly set."""
+        return os.getenv("CELERY_BROKER_URL", self.REDIS_URL)
+
+    @property
+    def CELERY_RESULT_BACKEND(self) -> str:
+        """Use REDIS_URL for Celery result backend if not explicitly set."""
+        return os.getenv("CELERY_RESULT_BACKEND", self.REDIS_URL)
     
     # Celery Configuration
     CELERY_TASK_SERIALIZER: str = "json"

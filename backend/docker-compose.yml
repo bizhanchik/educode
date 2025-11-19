@@ -108,9 +108,9 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: educode_celery_beat
-    command: celery -A app.tasks.celery_app beat --loglevel=info
+    command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
     environment:
-      - DATABASE_URL=postgresql+asyncpg://educode_user:educode_pass@postgres:5433/educode_db
+      - DATABASE_URL=postgresql+asyncpg://educode_user:educode_pass@postgres:5432/educode_db
       - REDIS_URL=redis://redis:6379/0
       - MINIO_ENDPOINT=minio:9000
       - MINIO_ACCESS_KEY=minioadmin
@@ -124,6 +124,7 @@ services:
       - minio
     volumes:
       - .:/app
+      - celery_beat_data:/tmp
     networks:
       - educode_network
     restart: unless-stopped
@@ -173,6 +174,8 @@ volumes:
   redis_data:
     driver: local
   minio_data:
+    driver: local
+  celery_beat_data:
     driver: local
 
 networks:
