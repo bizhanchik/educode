@@ -33,11 +33,9 @@ async def unified_login(login_data: LoginRequest, db: AsyncSession = Depends(get
     user = await authenticate_user(db, login_data.email, login_data.password)
     
     if not user:
-        # Check if it's legacy admin login (email as username)
         if (login_data.email == "admin_bro" and 
             verify_admin_credentials(login_data.email, login_data.password)):
             
-            # Create legacy admin token
             access_token = create_access_token(
                 data={"sub": "admin_bro", "role": "admin"},
                 expires_delta=timedelta(hours=JWT_EXPIRATION_HOURS)

@@ -1,194 +1,157 @@
-.PHONY: help up down restart logs build clean migrate seed shell test lint fmt smoke health
+# EduCode Backend - Makefile for common commands
+
+.PHONY: help build up down restart logs shell migrate migrate-create backup restore clean test
 
 # Default target
-.DEFAULT_GOAL := help
-
-# Colors for output
-BLUE := \033[0;34m
-GREEN := \033[0;32m
-YELLOW := \033[1;33m
-NC := \033[0m # No Color
-
-## help: Show this help message
 help:
-	@echo "$(BLUE)EduCode Backend - Available Commands$(NC)"
+	@echo "EduCode Backend - Available Commands:"
 	@echo ""
-	@echo "$(GREEN)Docker Commands:$(NC)"
-	@echo "  make up          - Start all services"
-	@echo "  make down        - Stop all services"
-	@echo "  make restart     - Restart all services"
-	@echo "  make logs        - Show logs (all services)"
-	@echo "  make build       - Rebuild Docker images"
-	@echo "  make clean       - Stop services and remove volumes"
-	@echo ""
-	@echo "$(GREEN)Database Commands:$(NC)"
-	@echo "  make migrate     - Run database migrations"
-	@echo "  make seed        - Seed database with test data"
-	@echo "  make shell       - Open database shell"
-	@echo ""
-	@echo "$(GREEN)Development Commands:$(NC)"
-	@echo "  make test        - Run all tests"
-	@echo "  make lint        - Run linters (ruff, flake8)"
-	@echo "  make fmt         - Format code (black, isort)"
-	@echo "  make smoke       - Run smoke tests"
-	@echo ""
-	@echo "$(GREEN)Health Commands:$(NC)"
-	@echo "  make health      - Check service health"
+	@echo "  make build           - Build all Docker containers"
+	@echo "  make up              - Start all services"
+	@echo "  make down            - Stop all services"
+	@echo "  make restart         - Restart all services"
+	@echo "  make logs            - View all logs"
+	@echo "  make logs-backend    - View backend logs"
+	@echo "  make logs-celery     - View Celery worker logs"
+	@echo "  make shell           - Open shell in backend container"
+	@echo "  make migrate         - Run database migrations"
+	@echo "  make migrate-create  - Create a new migration"
+	@echo "  make backup          - Backup database"
+	@echo "  make restore         - Restore database from backup"
+	@echo "  make clean           - Remove all containers and volumes"
+	@echo "  make test            - Run tests"
+	@echo "  make dev             - Start in development mode"
 	@echo ""
 
-## up: Start all Docker services
-up:
-	@echo "$(BLUE)🚀 Starting EduCode services...$(NC)"
-	docker compose up -d
-	@echo "$(GREEN)✅ Services started$(NC)"
-	@echo "API: http://localhost:8000"
-	@echo "Docs: http://localhost:8000/docs"
-	@echo "MinIO Console: http://localhost:9001"
-
-## down: Stop all Docker services
-down:
-	@echo "$(YELLOW)🛑 Stopping EduCode services...$(NC)"
-	docker compose down
-	@echo "$(GREEN)✅ Services stopped$(NC)"
-
-## restart: Restart all Docker services
-restart: down up
-
-## logs: Show logs from all services
-logs:
-	docker compose logs -f
-
-## logs-api: Show API logs only
-logs-api:
-	docker compose logs -f api
-
-## logs-worker: Show Celery worker logs
-logs-worker:
-	docker compose logs -f celery_worker
-
-## logs-beat: Show Celery beat logs
-logs-beat:
-	docker compose logs -f celery_beat
-
-## build: Rebuild Docker images
+# Build containers
 build:
-	@echo "$(BLUE)🔨 Building Docker images...$(NC)"
-	docker compose build
-	@echo "$(GREEN)✅ Build complete$(NC)"
+	docker-compose build
 
-## clean: Stop services and remove volumes
-clean:
-	@echo "$(YELLOW)🧹 Cleaning up...$(NC)"
-	docker compose down -v
-	@echo "$(GREEN)✅ Cleanup complete$(NC)"
+# Start services
+up:
+	docker-compose up -d
+	@echo "Services started! Access the API at http://localhost:8000/docs"
 
-## migrate: Run Alembic migrations
-migrate:
-	@echo "$(BLUE)🔄 Running database migrations...$(NC)"
-	docker compose exec api alembic upgrade head
-	@echo "$(GREEN)✅ Migrations complete$(NC)"
+# Start in development mode (with logs)
+dev:
+	docker-compose up
 
-## migrate-create: Create a new migration
-migrate-create:
-	@read -p "Enter migration message: " msg; \
-	docker compose exec api alembic revision --autogenerate -m "$$msg"
+# Stop services
+down:
+	docker-compose down
 
-## migrate-down: Rollback one migration
-migrate-down:
-	docker compose exec api alembic downgrade -1
+# Restart services
+restart:
+	docker-compose restart
 
-## seed: Seed database with test data
-seed:
-	@echo "$(BLUE)🌱 Seeding database...$(NC)"
-	docker compose exec api python scripts/seed.py
-	@echo "$(GREEN)✅ Database seeded$(NC)"
-	@echo ""
-	@echo "$(GREEN)Login credentials:$(NC)"
-	@echo "  Admin:    admin@educode.io / Passw0rd!"
-	@echo "  Teacher:  teacher@educode.io / Passw0rd!"
-	@echo "  Student:  student1@educode.io / Passw0rd!"
+# View all logs
+logs:
+	docker-compose logs -f
 
-## shell: Open PostgreSQL shell
+# View backend logs
+logs-backend:
+	docker-compose logs -f backend
+
+# View Celery logs
+logs-celery:
+	docker-compose logs -f celery_worker
+
+# Open shell in backend container
 shell:
-	docker compose exec postgres psql -U educode_user -d educode_db
+	docker-compose exec backend bash
 
-## shell-api: Open API container shell
-shell-api:
-	docker compose exec api /bin/bash
+# Run database migrations
+migrate:
+	docker-compose exec backend alembic upgrade head
 
-## shell-redis: Open Redis CLI
-shell-redis:
-	docker compose exec redis redis-cli
+# Create a new migration
+migrate-create:
+	@read -p "Migration description: " desc; \
+	docker-compose exec backend alembic revision --autogenerate -m "$$desc"
 
-## test: Run all tests
+# Rollback migration
+migrate-rollback:
+	docker-compose exec backend alembic downgrade -1
+
+# Show migration status
+migrate-status:
+	docker-compose exec backend alembic current
+	docker-compose exec backend alembic history
+
+# Backup database
+backup:
+	@mkdir -p backups
+	docker-compose exec postgres pg_dump -U educode_user educode_db > backups/backup_$$(date +%Y%m%d_%H%M%S).sql
+	@echo "Database backed up to backups/"
+
+# Restore database
+restore:
+	@echo "Available backups:"
+	@ls -1 backups/*.sql 2>/dev/null || echo "No backups found"
+	@read -p "Enter backup filename: " file; \
+	docker-compose exec -T postgres psql -U educode_user educode_db < "$$file"
+
+# Clean everything
+clean:
+	docker-compose down -v
+	@echo "All containers and volumes removed!"
+
+# Clean and rebuild
+rebuild: clean build up
+
+# Run tests
 test:
-	@echo "$(BLUE)🧪 Running tests...$(NC)"
-	docker compose exec api pytest -v --cov=app --cov-report=term-missing
-	@echo "$(GREEN)✅ Tests complete$(NC)"
+	docker-compose exec backend pytest
 
-## test-unit: Run unit tests only
-test-unit:
-	docker compose exec api pytest tests/test_auth.py tests/test_health.py -v
+# Run tests with coverage
+test-cov:
+	docker-compose exec backend pytest --cov=app --cov-report=html
 
-## test-integration: Run integration tests
-test-integration:
-	docker compose exec api pytest tests/test_crud.py tests/test_submissions.py -v
-
-## lint: Run linters
-lint:
-	@echo "$(BLUE)🔍 Running linters...$(NC)"
-	@docker compose exec api ruff check app/ || true
-	@docker compose exec api flake8 app/ --max-line-length=120 --exclude=venv,__pycache__ || true
-	@echo "$(GREEN)✅ Linting complete$(NC)"
-
-## fmt: Format code
-fmt:
-	@echo "$(BLUE)✨ Formatting code...$(NC)"
-	docker compose exec api black app/ scripts/ tests/
-	docker compose exec api isort app/ scripts/ tests/
-	@echo "$(GREEN)✅ Formatting complete$(NC)"
-
-## smoke: Run smoke tests
-smoke:
-	@echo "$(BLUE)🧪 Running smoke tests...$(NC)"
-	@bash scripts/smoke.sh || true
-
-## health: Check service health
-health:
-	@echo "$(BLUE)🏥 Checking service health...$(NC)"
-	@echo ""
-	@echo "API Health:"
-	@curl -s http://localhost:8000/api/v1/health | jq '.' || echo "❌ API not responding"
-	@echo ""
-	@echo "Database:"
-	@docker compose exec postgres pg_isready -U educode_user || echo "❌ Database not ready"
-	@echo ""
-	@echo "Redis:"
-	@docker compose exec redis redis-cli ping || echo "❌ Redis not responding"
-	@echo ""
-	@echo "MinIO:"
-	@curl -s http://localhost:9000/minio/health/live > /dev/null && echo "✅ MinIO is healthy" || echo "❌ MinIO not responding"
-
-## setup: Complete setup (build, up, migrate, seed)
-setup: build up
-	@echo "$(YELLOW)⏳ Waiting for services to start...$(NC)"
-	@sleep 10
-	@make migrate
-	@make seed
-	@echo ""
-	@echo "$(GREEN)🎉 Setup complete!$(NC)"
-	@echo "Visit: http://localhost:8000/docs"
-
-## reset: Clean, rebuild, and setup everything
-reset: clean setup
-	@echo "$(GREEN)🔄 Complete reset done!$(NC)"
-
-## status: Show Docker container status
+# Check service status
 status:
-	docker compose ps
+	docker-compose ps
 
-## version: Show version information
-version:
-	@echo "EduCode Backend v1.0.0"
-	@echo "Python: $$(docker compose exec api python --version)"
-	@echo "FastAPI: $$(docker compose exec api python -c 'import fastapi; print(fastapi.__version__)')"
+# View resource usage
+stats:
+	docker stats
+
+# Open PostgreSQL CLI
+db-shell:
+	docker-compose exec postgres psql -U educode_user -d educode_db
+
+# Open Redis CLI
+redis-shell:
+	docker-compose exec redis redis-cli
+
+# Setup environment file
+setup-env:
+	@if [ ! -f .env ]; then \
+		cp .env.example .env; \
+		echo ".env file created! Please update the values."; \
+	else \
+		echo ".env file already exists!"; \
+	fi
+
+# Full setup from scratch
+setup: setup-env build up migrate
+	@echo "Setup complete! Access the API at http://localhost:8000/docs"
+
+# Scale Celery workers
+scale-workers:
+	@read -p "Number of workers: " count; \
+	docker-compose up -d --scale celery_worker=$$count
+
+# View Flower (Celery monitor)
+flower:
+	@echo "Opening Flower at http://localhost:5555"
+	@open http://localhost:5555 || xdg-open http://localhost:5555 || echo "Please visit http://localhost:5555"
+
+# View API docs
+docs:
+	@echo "Opening API docs at http://localhost:8000/docs"
+	@open http://localhost:8000/docs || xdg-open http://localhost:8000/docs || echo "Please visit http://localhost:8000/docs"
+
+# View MinIO console
+minio:
+	@echo "Opening MinIO console at http://localhost:9001"
+	@open http://localhost:9001 || xdg-open http://localhost:9001 || echo "Please visit http://localhost:9001"

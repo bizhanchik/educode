@@ -1,9 +1,3 @@
-"""
-EduCode Backend - AISolution Schemas
-
-Pydantic schemas for AISolution model validation and serialization.
-"""
-
 from datetime import datetime
 from typing import List, Optional, Dict, Any
 from pydantic import BaseModel, Field
@@ -21,17 +15,14 @@ class AISolutionBase(BaseModel):
 
 
 class AISolutionCreate(AISolutionBase):
-    """Schema for creating a new AI solution."""
     pass
 
 
 class AISolutionRead(AISolutionBase):
-    """Schema for reading AI solution data."""
     id: int = Field(..., description="AI Solution ID")
     created_at: datetime = Field(..., description="Creation timestamp")
     updated_at: datetime = Field(..., description="Last update timestamp")
     
-    # Computed properties
     code_length: int = Field(..., description="Length of AI-generated code")
     code_lines: int = Field(..., description="Number of lines in code")
     model_name: Optional[str] = Field(None, description="AI model name")
@@ -62,7 +53,6 @@ class AISolutionWithTask(AISolutionRead):
     """Schema for AI solution with task details."""
     task: Optional['TaskRead'] = Field(None, description="Task details")
 
-# Resolve forward references
 try:
     from app.schemas.task import TaskRead
 except Exception:
@@ -85,7 +75,6 @@ class AISolutionMetadata(BaseModel):
 
 
 class TaskAISolutionSummary(BaseModel):
-    """Schema for task AI solution summary."""
     task_id: int
     task_title: str
     total_solutions: int

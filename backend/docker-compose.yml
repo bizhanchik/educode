@@ -1,23 +1,112 @@
-# Removed obsolete version attribute as recommended by Docker Compose v2
 
 services:
-  # FastAPI Application
-  api:
+  # PostgreSQL Database
+  postgres:
+    image: postgres:15-alpine
+    container_name: educode_postgres
+    environment:
+      POSTGRES_USER: ${POSTGRES_USER:-educode_user}
+      POSTGRES_PASSWORD: ${POSTGRES_PASSWORD:-educode_pass}
+      POSTGRES_DB: ${POSTGRES_DB:-educode_db}
+      POSTGRES_INITDB_ARGS: "-E UTF8"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql:ro
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER:-educode_user}"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - educode_network
+    restart: unless-stopped
+
+  # Redis for Celery
+  redis:
+    image: redis:7-alpine
+    container_name: educode_redis
+    command: redis-server --appendonly yes
+    volumes:
+      - redis_data:/data
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    networks:
+      - educode_network
+    restart: unless-stopped
+
+  # MinIO for file storage
+  minio:
+    image: minio/minio:latest
+    container_name: educode_minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_ROOT_PASSWORD: ${MINIO_SECRET_KEY:-minioadmin}
+    volumes:
+      - minio_data:/data
+    ports:
+      - "${MINIO_PORT:-9000}:9000"
+      - "${MINIO_CONSOLE_PORT:-9001}:9001"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 30s
+      timeout: 20s
+      retries: 3
+    networks:
+      - educode_network
+    restart: unless-stopped
+
+  # FastAPI Backend
+  backend:
     build:
       context: .
       dockerfile: Dockerfile
-    container_name: educode_api
-    ports:
-      - "8000:8000"
+    container_name: educode_backend
     environment:
-      - DATABASE_URL=postgresql+asyncpg://educode_user:educode_pass@postgres:5432/educode_db
-      - REDIS_URL=redis://redis:6379/0
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_SECURE=false
-      - ENVIRONMENT=development
-      - LOG_LEVEL=INFO
+      # Application
+      DEBUG: ${DEBUG:-false}
+      HOST: 0.0.0.0
+      PORT: 8000
+
+      # Security
+      SECRET_KEY: ${SECRET_KEY}
+      ALLOWED_ORIGINS: ${ALLOWED_ORIGINS:-http://localhost:3000}
+
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-educode_user}:${POSTGRES_PASSWORD:-educode_pass}@postgres:5432/${POSTGRES_DB:-educode_db}
+
+      # Redis & Celery
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-educode}
+      MINIO_SECURE: "false"
+
+      # AI Services
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+
+      # Similarity Service
+      SIMILARITY_SERVICE_URL: ${SIMILARITY_SERVICE_URL:-http://localhost:8001}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./:/app
+    ports:
+      - "${BACKEND_PORT:-8000}:8000"
     depends_on:
       postgres:
         condition: service_healthy
@@ -25,56 +114,24 @@ services:
         condition: service_healthy
       minio:
         condition: service_healthy
-    volumes:
-      - .:/app
-    networks:
-      - educode_network
-    restart: unless-stopped
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/health"]
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/health"]
       interval: 30s
       timeout: 10s
       retries: 3
       start_period: 40s
-
-  # PostgreSQL Database
-  postgres:
-    image: postgres:15-alpine
-    container_name: educode_postgres
-    environment:
-      POSTGRES_DB: educode_db
-      POSTGRES_USER: educode_user
-      POSTGRES_PASSWORD: educode_pass
-    ports:
-      - "5433:5432"
-    volumes:
-      - postgres_data:/var/lib/postgresql/data
-      - ./init-db.sql:/docker-entrypoint-initdb.d/init-db.sql
     networks:
       - educode_network
     restart: unless-stopped
-    healthcheck:
-      test: ["CMD-SHELL", "pg_isready -U educode_user -d educode_db"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
-
-  # Redis for Celery
-  redis:
-    image: redis:7-alpine
-    container_name: educode_redis
-    ports:
-      - "6379:6379"
-    volumes:
-      - redis_data:/data
-    networks:
-      - educode_network
-    restart: unless-stopped
-    healthcheck:
-      test: ["CMD", "redis-cli", "ping"]
-      interval: 10s
-      timeout: 5s
-      retries: 5
+    command: >
+      sh -c "
+        echo 'Waiting for database...' &&
+        sleep 5 &&
+        echo 'Running migrations...' &&
+        alembic upgrade head &&
+        echo 'Starting application...' &&
+        uvicorn app.main:app --host 0.0.0.0 --port 8000
+      "
 
   # Celery Worker
   celery_worker:
@@ -82,91 +139,100 @@ services:
       context: .
       dockerfile: Dockerfile
     container_name: educode_celery_worker
-    command: celery -A app.tasks.celery_app worker --loglevel=info
+    command: celery -A app.tasks.celery_app worker --loglevel=info --concurrency=4
     environment:
-      - DATABASE_URL=postgresql+asyncpg://educode_user:educode_pass@postgres:5432/educode_db
-      - REDIS_URL=redis://redis:6379/0
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_SECURE=false
-      - ENVIRONMENT=development
-      - LOG_LEVEL=INFO
-    depends_on:
-      - postgres
-      - redis
-      - minio
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-educode_user}:${POSTGRES_PASSWORD:-educode_pass}@postgres:5432/${POSTGRES_DB:-educode_db}
+
+      # Redis & Celery
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+
+      # MinIO
+      MINIO_ENDPOINT: minio:9000
+      MINIO_ACCESS_KEY: ${MINIO_ACCESS_KEY:-minioadmin}
+      MINIO_SECRET_KEY: ${MINIO_SECRET_KEY:-minioadmin}
+      MINIO_BUCKET_NAME: ${MINIO_BUCKET_NAME:-educode}
+      MINIO_SECURE: "false"
+
+      # AI Services
+      OPENAI_API_KEY: ${OPENAI_API_KEY}
+      ANTHROPIC_API_KEY: ${ANTHROPIC_API_KEY}
+
+      # Similarity Service
+      SIMILARITY_SERVICE_URL: ${SIMILARITY_SERVICE_URL:-http://localhost:8001}
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
     volumes:
-      - .:/app
+      - ./:/app
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+    healthcheck:
+      disable: true
     networks:
       - educode_network
     restart: unless-stopped
 
-  # Celery Beat Scheduler
+  # Celery Beat (Scheduler)
   celery_beat:
     build:
       context: .
       dockerfile: Dockerfile
     container_name: educode_celery_beat
-    command: celery -A app.tasks.celery_app beat --loglevel=info --schedule=/tmp/celerybeat-schedule
+    command: celery -A app.tasks.celery_app beat --loglevel=info
     environment:
-      - DATABASE_URL=postgresql+asyncpg://educode_user:educode_pass@postgres:5432/educode_db
-      - REDIS_URL=redis://redis:6379/0
-      - MINIO_ENDPOINT=minio:9000
-      - MINIO_ACCESS_KEY=minioadmin
-      - MINIO_SECRET_KEY=minioadmin
-      - MINIO_SECURE=false
-      - ENVIRONMENT=development
-      - LOG_LEVEL=INFO
+      # Database
+      DATABASE_URL: postgresql+asyncpg://${POSTGRES_USER:-educode_user}:${POSTGRES_PASSWORD:-educode_pass}@postgres:5432/${POSTGRES_DB:-educode_db}
+
+      # Redis & Celery
+      REDIS_URL: redis://redis:6379/0
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+
+      # Logging
+      LOG_LEVEL: ${LOG_LEVEL:-INFO}
+    volumes:
+      - ./:/app
     depends_on:
-      - postgres
       - redis
-      - minio
-    volumes:
-      - .:/app
-      - celery_beat_data:/tmp
-    networks:
-      - educode_network
-    restart: unless-stopped
-
-  # MinIO S3-compatible storage
-  minio:
-    image: minio/minio:latest
-    container_name: educode_minio
-    ports:
-      - "9000:9000"
-      - "9001:9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    command: server /data --console-address ":9001"
-    volumes:
-      - minio_data:/data
-    networks:
-      - educode_network
-    restart: unless-stopped
+      - celery_worker
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 30s
-      timeout: 20s
-      retries: 3
-
-  # MinIO Client for bucket creation
-  minio_client:
-    image: minio/mc:latest
-    container_name: educode_minio_client
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      /bin/sh -c "
-      /usr/bin/mc alias set myminio http://minio:9000 minioadmin minioadmin;
-      /usr/bin/mc mb myminio/educode --ignore-existing;
-      /usr/bin/mc policy set public myminio/educode;
-      exit 0;
-      "
+      disable: true
     networks:
       - educode_network
+    restart: unless-stopped
+
+  # Flower - Celery monitoring tool (optional)
+  flower:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: educode_flower
+    command: celery -A app.tasks.celery_app flower --port=5555
+    environment:
+      CELERY_BROKER_URL: redis://redis:6379/0
+      CELERY_RESULT_BACKEND: redis://redis:6379/0
+    ports:
+      - "${FLOWER_PORT:-5555}:5555"
+    depends_on:
+      - redis
+      - celery_worker
+    healthcheck:
+      disable: true
+    networks:
+      - educode_network
+    restart: unless-stopped
+
+networks:
+  educode_network:
+    driver: bridge
 
 volumes:
   postgres_data:
@@ -175,9 +241,3 @@ volumes:
     driver: local
   minio_data:
     driver: local
-  celery_beat_data:
-    driver: local
-
-networks:
-  educode_network:
-    driver: bridge

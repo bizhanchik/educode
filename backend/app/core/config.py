@@ -7,11 +7,11 @@ All settings are loaded from environment variables with sensible defaults.
 """
 
 import os
-from typing import List, Optional
+from typing import List, Optional, Union
 from functools import lru_cache
 
-from pydantic_settings import BaseSettings
-from pydantic import validator
+from pydantic_settings import BaseSettings, SettingsConfigDict
+from pydantic import field_validator, Field
 
 
 class Settings(BaseSettings):
@@ -31,7 +31,7 @@ class Settings(BaseSettings):
     
     # Security Settings
     SECRET_KEY: str = "your-secret-key-change-in-production"
-    ALLOWED_ORIGINS: List[str] = ["http://localhost:3000", "http://localhost:8080"]
+    ALLOWED_ORIGINS: Union[str, List[str]] = ["http://localhost:3000", "http://localhost:8080"]
     
     # Database Settings
     DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
@@ -83,34 +83,38 @@ class Settings(BaseSettings):
     
     # File Upload Settings
     MAX_FILE_SIZE_MB: int = 10
-    ALLOWED_FILE_EXTENSIONS: List[str] = [".py", ".js", ".java", ".cpp", ".c", ".go", ".rs"]
-    
-    @validator("ALLOWED_ORIGINS", pre=True)
+    ALLOWED_FILE_EXTENSIONS: Union[str, List[str]] = [".py", ".js", ".java", ".cpp", ".c", ".go", ".rs"]
+
+    model_config = SettingsConfigDict(
+        env_file=".env",
+        env_file_encoding="utf-8",
+        case_sensitive=True,
+        extra="ignore"
+    )
+
+    @field_validator("ALLOWED_ORIGINS", mode="before")
+    @classmethod
     def parse_cors_origins(cls, v):
         """Parse CORS origins from string or list."""
         if isinstance(v, str):
             return [origin.strip() for origin in v.split(",")]
         return v
-    
-    @validator("ALLOWED_FILE_EXTENSIONS", pre=True)
+
+    @field_validator("ALLOWED_FILE_EXTENSIONS", mode="before")
+    @classmethod
     def parse_file_extensions(cls, v):
         """Parse file extensions from string or list."""
         if isinstance(v, str):
             return [ext.strip() for ext in v.split(",")]
         return v
-    
-    @validator("DATABASE_URL")
+
+    @field_validator("DATABASE_URL")
+    @classmethod
     def validate_database_url(cls, v):
         """Ensure database URL uses asyncpg driver."""
         if not v.startswith("postgresql+asyncpg://"):
             raise ValueError("Database URL must use asyncpg driver")
         return v
-    
-    class Config:
-        env_file = ".env"
-        env_file_encoding = "utf-8"
-        case_sensitive = True
-        extra = "ignore"  # Allow extra fields in .env file
 
 
 @lru_cache()
