@@ -43,6 +43,7 @@ class Subject(Base):
     # Relationships
     # FIXED: Use lazy="selectin" to prevent greenlet errors when accessing relationships in async context
     lessons = relationship("Lesson", back_populates="subject", lazy="selectin")
+    teacher_assignments = relationship("TeacherSubjectGroup", back_populates="subject", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<Subject(id={self.id}, name='{self.name}')>"

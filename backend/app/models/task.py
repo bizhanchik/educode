@@ -71,6 +71,7 @@ class Task(Base):
     lesson = relationship("Lesson", back_populates="tasks", lazy="selectin")
     submissions = relationship("Submission", back_populates="task", cascade="all, delete-orphan", lazy="selectin")
     ai_solutions = relationship("AISolution", back_populates="task", cascade="all, delete-orphan", lazy="selectin")
+    tests = relationship("TaskTest", back_populates="task", cascade="all, delete-orphan", lazy="selectin")
 
     def __repr__(self) -> str:
         return f"<Task(id={self.id}, title='{self.title}', language='{self.language}')>"

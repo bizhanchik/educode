@@ -61,6 +61,7 @@ class User(Base):
 
     # Teacher relationships
     lessons = relationship("Lesson", back_populates="teacher", foreign_keys="Lesson.teacher_id", lazy="selectin")
+    teaching_assignments = relationship("TeacherSubjectGroup", back_populates="teacher", lazy="selectin")
 
     # Student relationships
     submissions = relationship("Submission", back_populates="student", foreign_keys="Submission.student_id", lazy="selectin")

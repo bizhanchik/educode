@@ -26,6 +26,9 @@ from app.routes.submissions import router as submissions_router
 from app.routes.evaluations import router as evaluations_router
 from app.routes.ai_solutions import router as ai_solutions_router
 from app.routes.similarity import router as similarity_router
+from app.routes.teacher_assignments import router as teacher_assignments_router
+from app.routes.lesson_assignments import router as lesson_assignments_router
+from app.routes.ai_generation import router as ai_generation_router
 
 # Setup structured logging
 setup_logging(log_level=getattr(settings, 'LOG_LEVEL', 'INFO'))
@@ -99,6 +102,9 @@ app.include_router(submissions_router, prefix="/api/v1", tags=["submissions"])
 app.include_router(evaluations_router, prefix="/api/v1", tags=["evaluations"])
 app.include_router(ai_solutions_router, prefix="/api/v1", tags=["ai-solutions"])
 app.include_router(similarity_router, prefix="/api/v1", tags=["similarity"])
+app.include_router(teacher_assignments_router, prefix="/api/v1/teacher-assignments", tags=["teacher-assignments"])
+app.include_router(lesson_assignments_router, prefix="/api/v1/lesson-assignments", tags=["lesson-assignments"])
+app.include_router(ai_generation_router, prefix="/api/v1/ai-generation", tags=["ai-generation"])
 
 @app.get("/")
 async def root():

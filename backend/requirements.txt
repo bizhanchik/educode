@@ -29,6 +29,11 @@ numpy
 minio
 boto3
 
+# File processing for AI generation
+pdfplumber
+python-pptx
+python-docx
+
 # Authentication and security
 python-jose[cryptography]
 passlib[bcrypt]

@@ -132,6 +132,16 @@ const Navbar = ({ onOpenModal, onPageChange, currentPage }) => {
             <LanguageSwitcher />
                    {isAuthenticated ? (
                      <>
+                       {user?.role === 'student' && (
+                         <motion.button
+                           onClick={() => onPageChange?.('my-grades')}
+                           className="hidden sm:inline-flex px-4 py-2 rounded-xl border border-blue-600 text-blue-600 text-sm font-medium hover:bg-blue-50 transition-colors"
+                           whileHover={{ scale: 1.03 }}
+                           whileTap={{ scale: 0.98 }}
+                         >
+                           Мои оценки
+                         </motion.button>
+                       )}
                        <motion.button
                          onClick={handleDashboardNavigate}
                          className="hidden sm:inline-flex px-4 py-2 rounded-xl bg-blue-600 text-white text-sm font-medium hover:bg-blue-700 transition-colors"

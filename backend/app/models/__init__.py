@@ -14,6 +14,9 @@ from app.models.task import Task
 from app.models.submission import Submission
 from app.models.evaluation import Evaluation
 from app.models.ai_solution import AISolution
+from app.models.teacher_subject_group import TeacherSubjectGroup
+from app.models.lesson_assignment import LessonAssignment
+from app.models.task_test import TaskTest
 
 __all__ = [
     "User",
@@ -24,5 +27,8 @@ __all__ = [
     "Task",
     "Submission",
     "Evaluation",
-    "AISolution"
+    "AISolution",
+    "TeacherSubjectGroup",
+    "LessonAssignment",
+    "TaskTest"
 ]

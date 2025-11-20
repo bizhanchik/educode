@@ -13,10 +13,11 @@ celery_app = Celery(
     include=[
         "app.tasks.ai_tasks",
         "app.tasks.grading_tasks",
+        "app.tasks.ai_generation_tasks",
     ]
 )
 
-from app.tasks import ai_tasks, grading_tasks
+from app.tasks import ai_tasks, grading_tasks, ai_generation_tasks
 
 celery_app.conf.update(
     task_serializer=settings.CELERY_TASK_SERIALIZER,
@@ -29,8 +30,9 @@ celery_app.conf.update(
     task_routes={
         "app.tasks.ai_tasks.*": {"queue": "ai_queue"},
         "app.tasks.grading_tasks.*": {"queue": "grading_queue"},
+        "app.tasks.ai_generation_tasks.*": {"queue": "ai_queue"},
     },
-    
+
     task_queues=(
         Queue("ai_queue", routing_key="ai"),
         Queue("grading_queue", routing_key="grading"),

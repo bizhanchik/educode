@@ -8,7 +8,8 @@ import {
   FileText,
   PlayCircle,
   Upload,
-  Type
+  Type,
+  ClipboardList
 } from 'lucide-react';
 import { useAuth } from '../hooks/useAuth.jsx';
 import {
@@ -545,7 +546,7 @@ const TeacherDashboard = ({ onPageChange }) => {
           <div className="text-center text-gray-500 py-24">Загрузка материалов...</div>
         ) : (
           <>
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-10">
+            <div className="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
               <StatsCard
                 icon={GraduationCap}
                 title="Всего уроков"
@@ -564,6 +565,18 @@ const TeacherDashboard = ({ onPageChange }) => {
                 value={lessons.filter((lesson) => !lesson.description).length}
                 accent="bg-amber-100 text-amber-600"
               />
+              <div
+                onClick={() => onPageChange?.('task-management')}
+                className="bg-white rounded-3xl border border-gray-100 p-6 flex items-center gap-4 cursor-pointer hover:shadow-lg transition-shadow"
+              >
+                <div className="w-12 h-12 rounded-2xl flex items-center justify-center bg-green-100 text-green-600">
+                  <ClipboardList className="w-6 h-6" />
+                </div>
+                <div>
+                  <p className="text-sm text-gray-500">Управление</p>
+                  <p className="text-lg font-bold text-gray-900">Заданиями</p>
+                </div>
+              </div>
             </div>
 
             {subjectsWithLessons.length === 0 ? (

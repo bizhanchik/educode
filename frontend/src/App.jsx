@@ -12,6 +12,13 @@ import Journal from './pages/Journal';
 import JournalDetail from './pages/JournalDetail';
 import TeacherDashboard from './pages/TeacherDashboard';
 import AdminDashboard from './pages/AdminDashboard';
+import TaskManagement from './pages/TaskManagement';
+import SubmitTask from './pages/SubmitTask';
+import TaskSubmissions from './pages/TaskSubmissions';
+import MyGrades from './pages/MyGrades';
+import LessonCreator from './pages/LessonCreator';
+import LessonAssignmentManager from './pages/LessonAssignmentManager';
+import TeacherAssignments from './pages/TeacherAssignments';
 import AuthModal from './components/AuthModal';
 import AnimatedBackground from './components/AnimatedBackground';
 import { LanguageProvider } from './i18n.jsx';
@@ -31,7 +38,14 @@ const ROUTE_RULES = {
   journal: { roles: ['student', 'teacher', 'admin'] },
   'journal-detail': { roles: ['student', 'teacher', 'admin'] },
   'teacher-dashboard': { roles: ['teacher'] },
-  'admin-dashboard': { roles: ['admin'] }
+  'admin-dashboard': { roles: ['admin'] },
+  'task-management': { roles: ['teacher', 'admin'] },
+  'submit-task': { roles: ['student'] },
+  'task-submissions': { roles: ['teacher', 'admin'] },
+  'my-grades': { roles: ['student'] },
+  'lesson-creator': { roles: ['teacher'] },
+  'lesson-assign': { roles: ['teacher'] },
+  'teacher-assignments': { roles: ['admin'] }
 };
 
 const AppContent = () => {
@@ -136,6 +150,20 @@ const AppContent = () => {
         return <TeacherDashboard onPageChange={handlePageChange} />;
       case 'admin-dashboard':
         return <AdminDashboard onPageChange={handlePageChange} />;
+      case 'task-management':
+        return <TaskManagement onPageChange={handlePageChange} pageParams={pageParams} />;
+      case 'submit-task':
+        return <SubmitTask onPageChange={handlePageChange} pageParams={pageParams} />;
+      case 'task-submissions':
+        return <TaskSubmissions onPageChange={handlePageChange} pageParams={pageParams} />;
+      case 'my-grades':
+        return <MyGrades onPageChange={handlePageChange} />;
+      case 'lesson-creator':
+        return <LessonCreator onPageChange={handlePageChange} pageParams={pageParams} />;
+      case 'lesson-assign':
+        return <LessonAssignmentManager onPageChange={handlePageChange} pageParams={pageParams} />;
+      case 'teacher-assignments':
+        return <TeacherAssignments onPageChange={handlePageChange} />;
       default:
         return <Home onOpenModal={handleOpenModal} onPageChange={handlePageChange} />;
     }
