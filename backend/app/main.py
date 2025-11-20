@@ -82,12 +82,25 @@ class SecurityHeadersMiddleware(BaseHTTPMiddleware):
 # Add middleware (order matters - last added is executed first)
 app.add_middleware(SecurityHeadersMiddleware)
 app.add_middleware(RequestIDMiddleware)
+# Enhanced CORS configuration with ngrok support
+def get_allowed_origins():
+    """Get allowed origins including ngrok domains in development."""
+    origins = list(settings.ALLOWED_ORIGINS)
+
+    # In development, allow all ngrok domains
+    if settings.DEBUG:
+        # Add wildcard pattern - we'll handle this in middleware
+        origins.append("*")  # Allow all origins in development for easier testing
+
+    return origins if "*" not in origins else ["*"]
+
 app.add_middleware(
     CORSMiddleware,
-    allow_origins=settings.ALLOWED_ORIGINS,
+    allow_origins=get_allowed_origins(),
     allow_credentials=True,
     allow_methods=["*"],
     allow_headers=["*"],
+    expose_headers=["*"]
 )
 
 app.include_router(health_router, prefix="/api/v1", tags=["health"])
