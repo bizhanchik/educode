@@ -30,7 +30,8 @@ settings = get_settings()
 
 
 # Create async database session for Celery tasks
-engine = create_async_engine(settings.SQLALCHEMY_DATABASE_URI, echo=False)
+# Use DATABASE_URL directly to ensure correct database connection
+engine = create_async_engine(settings.DATABASE_URL, echo=False)
 async_session_maker = sessionmaker(
     engine, class_=AsyncSession, expire_on_commit=False
 )

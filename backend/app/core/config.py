@@ -36,6 +36,11 @@ class Settings(BaseSettings):
     # Database Settings
     DATABASE_URL: str = "postgresql+asyncpg://educode_user:educode_pass@localhost:5432/educode_db"
     DATABASE_ECHO: bool = False  # Set to True for SQL query logging
+
+    @property
+    def SQLALCHEMY_DATABASE_URI(self) -> str:
+        """Alias for DATABASE_URL for compatibility."""
+        return self.DATABASE_URL
     
     # Redis Settings (for Celery)
     REDIS_URL: str = "redis://localhost:6379/0"
