@@ -1,4 +1,4 @@
-const API_BASE_URL = "https://4086f842612e.ngrok-free.app";
+const API_BASE_URL = "https://4086f842612e.ngrok-free.app/api/v1";
 export const ACCESS_TOKEN_KEY = 'educode_access_token';
 export const ACCESS_TOKEN_EXP_KEY = 'educode_access_token_expires_at';
 export const USER_STORAGE_KEY = 'educode_user';
