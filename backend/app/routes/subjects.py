@@ -44,7 +44,7 @@ async def create_subject(
                 detail="Subject name already exists"
             )
 
-        subject = Subject(**subject_data.model_dump())
+        subject = Subject(**subject_data.model_dump(), created_by=current_user.id)
         db.add(subject)
         await db.commit()
         await db.refresh(subject)
@@ -76,15 +76,20 @@ async def get_subjects(
             count_query = select(func.count(Subject.id))
             subjects_query = select(Subject).offset((page - 1) * size).limit(size).order_by(Subject.created_at.desc())
         elif current_user.role == UserRole.TEACHER:
+            teacher_condition = or_(
+                Subject.created_by == current_user.id,
+                Subject.id.in_(
+                    select(TeacherSubjectGroup.subject_id)
+                    .where(TeacherSubjectGroup.teacher_id == current_user.id)
+                )
+            )
             count_query = (
                 select(func.count(func.distinct(Subject.id)))
-                .join(TeacherSubjectGroup, Subject.id == TeacherSubjectGroup.subject_id)
-                .where(TeacherSubjectGroup.teacher_id == current_user.id)
+                .where(teacher_condition)
             )
             subjects_query = (
                 select(Subject)
-                .join(TeacherSubjectGroup, Subject.id == TeacherSubjectGroup.subject_id)
-                .where(TeacherSubjectGroup.teacher_id == current_user.id)
+                .where(teacher_condition)
                 .distinct()
                 .offset((page - 1) * size)
                 .limit(size)
