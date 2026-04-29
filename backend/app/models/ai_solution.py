@@ -1,0 +1,75 @@
+from datetime import datetime
+from enum import Enum
+from typing import Optional, Dict, Any
+import json
+
+from sqlalchemy import Column, Integer, String, Text, DateTime, ForeignKey, Enum as SQLEnum
+from sqlalchemy.orm import relationship
+from sqlalchemy.sql import func
+
+from app.core.database import Base
+
+
+class AIProvider(str, Enum):
+    OPENAI = "openai"
+    ANTHROPIC = "anthropic"
+
+
+class AISolution(Base):
+
+    __tablename__ = "ai_solutions"
+    id = Column(Integer, primary_key=True, index=True)
+    task_id = Column(Integer, ForeignKey("tasks.id"), nullable=False, index=True)
+    provider = Column(SQLEnum(AIProvider), nullable=False, index=True)
+    variant_index = Column(Integer, nullable=False, index=True)
+    code = Column(Text, nullable=False)
+    meta = Column(Text, nullable=True)
+
+    created_at = Column(DateTime(timezone=True), server_default=func.now(), nullable=False)
+    updated_at = Column(DateTime(timezone=True), server_default=func.now(), onupdate=func.now(), nullable=False)
+
+    task = relationship("Task", back_populates="ai_solutions", lazy="selectin")
+
+    def __repr__(self) -> str:
+        return f"<AISolution(id={self.id}, task_id={self.task_id}, provider='{self.provider}', variant={self.variant_index})>"
+
+    @property
+    def meta_data(self) -> Dict[str, Any]:
+        if not self.meta:
+            return {}
+        try:
+            return json.loads(self.meta)
+        except (json.JSONDecodeError, TypeError):
+            return {}
+
+    @meta_data.setter
+    def meta_data(self, value: Dict[str, Any]) -> None:
+        self.meta = json.dumps(value) if value else None
+
+    @property
+    def code_length(self) -> int:
+        return len(self.code)
+
+    @property
+    def code_lines(self) -> int:
+        return len(self.code.splitlines())
+
+    @property
+    def model_name(self) -> Optional[str]:
+        return self.meta_data.get("model")
+
+    @property
+    def prompt_used(self) -> Optional[str]:
+        return self.meta_data.get("prompt")
+
+    @property
+    def tokens_used(self) -> Optional[int]:
+        return self.meta_data.get("tokens")
+
+    @property
+    def is_openai_solution(self) -> bool:
+        return self.provider == AIProvider.OPENAI
+
+    @property
+    def is_anthropic_solution(self) -> bool:
+        return self.provider == AIProvider.ANTHROPIC
