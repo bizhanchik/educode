@@ -367,6 +367,7 @@ const MyCourses = ({ onPageChange }) => {
           onSubmit={async (formData) => {
             setCourseModalSaving(true);
             let subjectCreated = false;
+            let createdSubject = null;
             try {
               const codeValue = formData.code?.trim() || formData.name.substring(0, 4).toUpperCase();
               const payload = {
@@ -382,12 +383,8 @@ const MyCourses = ({ onPageChange }) => {
               // Создаем subject — основная операция
               const response = await createSubject(payload);
               const newSubject = response.data;
+              createdSubject = newSubject;
               subjectCreated = true;
-
-              // Сразу добавляем курс в список — не ждём назначения группы
-              if (newSubject) {
-                setSubjects(prev => [...prev, newSubject]);
-              }
 
               // Закрываем модалку сразу после успешного создания курса
               setCourseModalOpen(false);
@@ -416,8 +413,7 @@ const MyCourses = ({ onPageChange }) => {
                   await Promise.all(assignmentPromises);
                 } catch (assignError) {
                   console.warn('[MyCourses] Failed to assign groups (course was created):', assignError);
-                  // Курс создан, но назначение групп не прошло — предупреждаем, не блокируем
-                  alert("Курс создан, но не удалось назначить некоторые группы. Попробуйте назначить их позже.");
+                  // Курс создан — просто тихо логируем, курс уже виден в списке
                 }
               }
             } catch (error) {
@@ -440,8 +436,15 @@ const MyCourses = ({ onPageChange }) => {
               }
             } finally {
               setCourseModalSaving(false);
-              // Обновляем список курсов в любом случае (курс мог быть создан даже при ошибке назначения)
+              // Обновляем список курсов с бэкенда
               await loadSubjects();
+              // Если курс создан но бэкенд его не вернул (нет teacher_assignment) — добавляем вручную
+              if (createdSubject) {
+                setSubjects(prev => {
+                  const exists = prev.some(s => s.id === createdSubject.id);
+                  return exists ? prev : [...prev, createdSubject];
+                });
+              }
             }
           }}
           groups={allGroups}
