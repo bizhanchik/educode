@@ -384,6 +384,11 @@ const MyCourses = ({ onPageChange }) => {
               const newSubject = response.data;
               subjectCreated = true;
 
+              // Сразу добавляем курс в список — не ждём назначения группы
+              if (newSubject) {
+                setSubjects(prev => [...prev, newSubject]);
+              }
+
               // Закрываем модалку сразу после успешного создания курса
               setCourseModalOpen(false);
               setCourseFormData({ name: "", code: "", selectedGroups: [] });
